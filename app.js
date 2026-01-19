@@ -542,6 +542,9 @@ async function fetchCachedSpecialGuestsCards(setCode) {
 // Promo types that are collector booster exclusives
 const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
 
+// Frame effects that are collector booster exclusives
+const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted'];
+
 // Live fetch from Scryfall API
 async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests) {
   let query = `set:${setCode} lang:en`;
@@ -565,12 +568,15 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
     if (error.message !== 'HTTP 404') throw error;
   }
 
-  // Client-side filter: remove collector-exclusive promo types for play boosters
-  // This is needed because Scryfall's promo filters don't work reliably for new sets
+  // Client-side filter: remove collector-exclusive cards for play boosters
+  // This is needed because Scryfall's filters don't work reliably for new sets
   if (boosterType !== 'collector') {
     cards = cards.filter(card => {
       const promos = card.promo_types || [];
-      return !promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
+      const frames = card.frame_effects || [];
+      const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
+      const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
+      return !hasExclusivePromo && !hasExclusiveFrame;
     });
   }
 

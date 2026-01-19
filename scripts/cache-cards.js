@@ -18,6 +18,9 @@ const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 // Promo types that are collector booster exclusives
 const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
 
+// Frame effects that are collector booster exclusives
+const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted'];
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url, retries = 3) {
