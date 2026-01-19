@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PackCracker - MTG Booster Value Guide</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PackCracker</h1>
+      <p class="subtitle">Find the valuable cards in your booster packs</p>
+    </header>
+
+    <div class="controls">
+      <div class="select-group">
+        <label for="set-select">Set</label>
+        <select id="set-select" disabled>
+          <option value="">Loading sets...</option>
+        </select>
+      </div>
+
+      <div class="select-group">
+        <label for="booster-type">Booster Type</label>
+        <select id="booster-type">
+          <option value="play">Play Booster</option>
+          <option value="collector">Collector Booster</option>
+        </select>
+      </div>
+
+      <div class="select-group">
+        <label for="min-price">Minimum Price</label>
+        <select id="min-price">
+          <option value="1">$1+</option>
+          <option value="2" selected>$2+</option>
+          <option value="5">$5+</option>
+          <option value="10">$10+</option>
+          <option value="20">$20+</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Loading cards...</span>
+    </div>
+
+    <div id="card-count" class="card-count hidden"></div>
+
+    <div id="card-grid" class="card-grid"></div>
+
+    <div id="error" class="error hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
