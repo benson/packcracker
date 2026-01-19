@@ -54,20 +54,20 @@ function updateBoosterTypeOptions(releaseDate) {
 
   if (era === 'draft') {
     // Pre-collector era: only draft boosters existed
-    boosterType.innerHTML = '<option value="play">Draft Booster</option>';
+    boosterType.innerHTML = '<option value="play">draft booster</option>';
     boosterType.disabled = true;
   } else if (era === 'set') {
     // Set booster era
     boosterType.innerHTML = `
-      <option value="play">Draft / Set Booster</option>
-      <option value="collector">Collector Booster</option>
+      <option value="play">draft / set booster</option>
+      <option value="collector">collector booster</option>
     `;
     boosterType.disabled = false;
   } else {
     // Play booster era (current)
     boosterType.innerHTML = `
-      <option value="play">Play Booster</option>
-      <option value="collector">Collector Booster</option>
+      <option value="play">play booster</option>
+      <option value="collector">collector booster</option>
     `;
     boosterType.disabled = false;
   }
@@ -172,10 +172,15 @@ function expandCardFinishes(cards) {
 }
 
 // Filter and sort cards by price (booster filtering already done server-side)
-function filterAndSortCards(cards, minPrice, boosterType) {
+function filterAndSortCards(cards, minPrice, excludeRares) {
   const expanded = expandCardFinishes(cards);
   return expanded
     .filter(card => card.price >= minPrice)
+    .filter(card => {
+      if (!excludeRares) return true;
+      const rarity = card.rarity?.toLowerCase();
+      return rarity !== 'rare' && rarity !== 'mythic';
+    })
     .sort((a, b) => b.price - a.price);
 }
 
@@ -186,16 +191,16 @@ function renderCards(cards) {
 
   if (cards.length === 0) {
     grid.innerHTML = `
-      <div class="no-results" style="grid-column: 1 / -1;">
-        <h3>No cards found</h3>
-        <p>Try lowering the minimum price or switching booster type</p>
+      <div class="no-results">
+        <h3>no cards found</h3>
+        <p>try lowering the minimum price or switching booster type</p>
       </div>
     `;
     countEl.classList.add('hidden');
     return;
   }
 
-  countEl.textContent = `Showing ${cards.length} card${cards.length === 1 ? '' : 's'}`;
+  countEl.textContent = `showing ${cards.length} card${cards.length === 1 ? '' : 's'}`;
   countEl.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
@@ -203,9 +208,10 @@ function renderCards(cards) {
                      card.card_faces?.[0]?.image_uris?.normal ||
                      '';
     const scryfallUrl = card.scryfall_uri || '#';
+    const treatment = card.treatment.toLowerCase();
 
     return `
-      <a class="card" href="${scryfallUrl}" target="_blank" rel="noopener noreferrer">
+      <div class="card" data-url="${scryfallUrl}">
         <img
           class="card-image"
           src="${imageUrl}"
@@ -213,15 +219,23 @@ function renderCards(cards) {
           loading="lazy"
         />
         <div class="card-info">
-          <div class="card-name" title="${card.name}">${card.name}</div>
+          <div class="card-name" title="${card.name}">${card.name.toLowerCase()}</div>
           <div class="card-details">
-            <span class="card-treatment">${card.treatment}</span>
+            <span class="card-treatment">${treatment}</span>
             <span class="card-price">$${card.price.toFixed(2)}</span>
           </div>
         </div>
-      </a>
+      </div>
     `;
   }).join('');
+
+  // Add click handlers for cards
+  grid.querySelectorAll('.card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      window.open(card.dataset.url, '_blank');
+    });
+  });
 }
 
 // Show/hide loading state
@@ -247,31 +261,32 @@ async function loadCards() {
   const setCode = document.getElementById('set-select').value;
   const boosterType = document.getElementById('booster-type').value;
   const minPrice = parseFloat(document.getElementById('min-price').value);
+  const excludeRares = document.getElementById('exclude-rares').checked;
 
   if (!setCode) return;
 
   document.getElementById('error').classList.add('hidden');
   setLoading(true);
 
-  // Cache key includes all query parameters
+  // Cache key for raw API results (excludeRares is client-side only)
   const cacheKey = `${setCode}-${boosterType}-${minPrice}`;
 
   try {
-    let cards;
+    let rawCards;
     if (cardCache.has(cacheKey)) {
-      cards = cardCache.get(cacheKey);
+      rawCards = cardCache.get(cacheKey);
     } else {
       // Fetch with server-side filtering
-      const rawCards = await fetchSetCards(setCode, boosterType, minPrice);
-      // Expand finishes and do final client-side filtering
-      cards = filterAndSortCards(rawCards, minPrice, boosterType);
-      cardCache.set(cacheKey, cards);
+      rawCards = await fetchSetCards(setCode, boosterType, minPrice);
+      cardCache.set(cacheKey, rawCards);
     }
 
+    // Apply client-side filtering (including excludeRares)
+    const cards = filterAndSortCards(rawCards, minPrice, excludeRares);
     renderCards(cards);
   } catch (error) {
     console.error('Error loading cards:', error);
-    showError('Failed to load cards. Please try again.');
+    showError('failed to load cards. please try again.');
   } finally {
     setLoading(false);
   }
@@ -295,13 +310,14 @@ async function init() {
   const setSelect = document.getElementById('set-select');
   const boosterType = document.getElementById('booster-type');
   const minPrice = document.getElementById('min-price');
+  const excludeRares = document.getElementById('exclude-rares');
 
   try {
     // Load sets from static JSON
     setsData = await fetchSets();
 
     setSelect.innerHTML = setsData.map(set =>
-      `<option value="${set.code}">${set.name} (${set.released.slice(0, 4)})</option>`
+      `<option value="${set.code}">${set.name.toLowerCase()} (${set.released.slice(0, 4)})</option>`
     ).join('');
     setSelect.disabled = false;
 
@@ -314,13 +330,14 @@ async function init() {
     setSelect.addEventListener('change', onSetChange);
     boosterType.addEventListener('change', loadCards);
     minPrice.addEventListener('change', loadCards);
+    excludeRares.addEventListener('change', loadCards);
 
     // Load initial set
     await loadCards();
 
   } catch (error) {
     console.error('Error initializing:', error);
-    showError('Failed to load sets. Please refresh the page.');
+    showError('failed to load sets. please refresh the page.');
   }
 }
 
