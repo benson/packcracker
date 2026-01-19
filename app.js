@@ -961,33 +961,31 @@ async function init() {
     // Read initial state from URL
     const urlState = getStateFromURL();
 
-    // Apply URL state or defaults
-    let initialSet = setsData[0];
+    // Only auto-select and load if there's a set in the URL
     if (urlState.set) {
       const foundSet = setsData.find(s => s.code === urlState.set);
-      if (foundSet) initialSet = foundSet;
+      if (foundSet) {
+        const initialDisplay = `${foundSet.name.toLowerCase()} (${foundSet.released.slice(0, 4)})`;
+        setInput.value = initialDisplay;
+        selectedSetDisplay = initialDisplay;
+        setHidden.value = foundSet.code;
+
+        // Set booster type options based on set era, then apply URL value
+        updateBoosterTypeOptions(foundSet.released, foundSet.code, urlState.booster);
+
+        // Update filter toggles based on what this set has
+        updateFilterToggles(foundSet.code, foundSet.released);
+
+        // Set toggles from URL (after updateFilterToggles so visibility is set first)
+        setToggleValue('price-toggle', 'min-price', urlState.min);
+        setToggleValue('foils-toggle', 'foils-mode', urlState.foils);
+        setToggleValue('rares-toggle', 'rares-mode', urlState.rares);
+        setToggleValue('list-toggle', 'list-mode', urlState.list);
+
+        // Load initial cards
+        await loadCards();
+      }
     }
-
-    // Set initial values
-    const initialDisplay = `${initialSet.name.toLowerCase()} (${initialSet.released.slice(0, 4)})`;
-    setInput.value = initialDisplay;
-    selectedSetDisplay = initialDisplay;
-    setHidden.value = initialSet.code;
-
-    // Set booster type options based on set era, then apply URL value
-    updateBoosterTypeOptions(initialSet.released, initialSet.code, urlState.booster);
-
-    // Update filter toggles based on what this set has
-    updateFilterToggles(initialSet.code, initialSet.released);
-
-    // Set toggles from URL (after updateFilterToggles so visibility is set first)
-    setToggleValue('price-toggle', 'min-price', urlState.min);
-    setToggleValue('foils-toggle', 'foils-mode', urlState.foils);
-    setToggleValue('rares-toggle', 'rares-mode', urlState.rares);
-    setToggleValue('list-toggle', 'list-mode', urlState.list);
-
-    // Load initial cards
-    await loadCards();
 
     // Auto-focus the set input
     setInput.focus();
