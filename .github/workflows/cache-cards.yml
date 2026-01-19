@@ -51,7 +51,7 @@ jobs:
                 !set.digital &&
                 !blacklist.includes(set.code) &&
                 set.card_count > 0 &&
-                new Date(set.released_at) <= new Date()
+                new Date(set.released_at) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
               )
               .sort((a, b) => new Date(b.released_at) - new Date(a.released_at))
               .map(set => ({
