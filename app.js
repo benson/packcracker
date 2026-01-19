@@ -532,7 +532,10 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
   let query = `set:${setCode} lang:en`;
 
   if (boosterType !== 'collector') {
-    query += ' is:booster';
+    // For Play Boosters, exclude Collector Booster exclusives
+    // is:booster alone isn't reliable, so also exclude "boosterfun" variants
+    // (showcase, extended art, borderless, textured foil, etc.)
+    query += ' is:booster -is:boosterfun';
   }
 
   const priceThreshold = Math.max(0.5, minPrice - 0.5);
