@@ -38,7 +38,9 @@ async function fetchSetCards(setCode, boosterType) {
   let query = `set:${setCode} lang:en`;
 
   if (boosterType !== 'collector') {
-    query += ' is:booster';
+    // Exclude boosterfun variants (showcase, extended art, etc.) from Play Booster results
+    // These are Collector Booster exclusives
+    query += ' is:booster -is:boosterfun';
   }
 
   // Fetch cards worth $0.50+ to have some buffer
