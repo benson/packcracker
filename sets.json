@@ -125,6 +125,11 @@
     "released": "2023-04-21"
   },
   {
+    "code": "unk",
+    "name": "Unknown Event",
+    "released": "2023-02-15"
+  },
+  {
     "code": "one",
     "name": "Phyrexia: All Will Be One",
     "released": "2023-02-10"
