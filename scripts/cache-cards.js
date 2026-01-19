@@ -15,6 +15,9 @@ const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 // Jumpstart sets have their own booster type (no play/collector distinction)
 const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 
+// Promo types that are collector booster exclusives
+const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url, retries = 3) {
@@ -44,7 +47,11 @@ async function fetchSetCards(setCode, boosterType) {
   if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
     // Exclude boosterfun variants (showcase, extended art, etc.) from Play Booster results
     // These are Collector Booster exclusives
+    // Also exclude collector-exclusive promo types for new sets where is:boosterfun isn't populated
     query += ' is:booster -is:boosterfun';
+    COLLECTOR_EXCLUSIVE_PROMOS.forEach(promo => {
+      query += ` -promo:${promo}`;
+    });
   }
 
   // Fetch cards worth $0.50+ to have some buffer

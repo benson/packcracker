@@ -539,15 +539,16 @@ async function fetchCachedSpecialGuestsCards(setCode) {
   return cards;
 }
 
+// Promo types that are collector booster exclusives
+const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
+
 // Live fetch from Scryfall API
 async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests) {
   let query = `set:${setCode} lang:en`;
 
   // Jumpstart sets don't use is:booster filter
   if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
-    // For Play Boosters, exclude Collector Booster exclusives
-    // is:booster alone isn't reliable, so also exclude "boosterfun" variants
-    // (showcase, extended art, borderless, textured foil, etc.)
+    // For Play Boosters, use is:booster to get base set
     query += ' is:booster -is:boosterfun';
   }
 
@@ -562,6 +563,15 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
     cards = data.data;
   } catch (error) {
     if (error.message !== 'HTTP 404') throw error;
+  }
+
+  // Client-side filter: remove collector-exclusive promo types for play boosters
+  // This is needed because Scryfall's promo filters don't work reliably for new sets
+  if (boosterType !== 'collector') {
+    cards = cards.filter(card => {
+      const promos = card.promo_types || [];
+      return !promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
+    });
   }
 
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
