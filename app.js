@@ -801,10 +801,13 @@ function renderCards(cards, rawCards) {
     let treatment = card.treatment.toLowerCase().replace(/, ?foil$/i, '').replace(/^foil, ?/i, '').replace(/^foil$/i, '');
     if (!treatment || treatment === 'regular') treatment = '';
 
-    // Build price display
-    const priceDisplay = card.finishPrices
-      .map(f => `<span class="finish-price"><span class="finish-type">${f.type}</span> $${f.price.toFixed(2)}</span>`)
-      .join(' · ');
+    // Build price display with treatment inline
+    const priceItems = card.finishPrices
+      .map(f => `<span class="finish-price"><span class="finish-type">${f.type}</span> $${f.price.toFixed(2)}</span>`);
+
+    const priceDisplay = treatment
+      ? `<span class="card-treatment">${treatment}</span> · ${priceItems.join(' · ')}`
+      : priceItems.join(' · ');
 
     return `
       <div class="card" data-url="${scryfallUrl}">
@@ -816,7 +819,6 @@ function renderCards(cards, rawCards) {
         />
         <div class="card-info">
           <div class="card-name" title="${card.name}">${card.name.toLowerCase()}</div>
-          ${treatment ? `<div class="card-treatment">${treatment}</div>` : ''}
           <div class="card-prices">${priceDisplay}</div>
         </div>
       </div>

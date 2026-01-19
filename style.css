@@ -229,8 +229,12 @@ select:disabled {
   color: #999;
   cursor: pointer;
   text-transform: lowercase;
-  transition: color 0.15s;
+  transition: color 0.15s ease;
   position: relative;
+}
+
+.toggle-btn::after {
+  transition: opacity 0.15s ease;
 }
 
 .toggle-btn:hover {
@@ -326,7 +330,7 @@ select:disabled {
 }
 
 .card:hover .card-image {
-  opacity: 0.85;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 .card-image {
@@ -334,9 +338,9 @@ select:disabled {
   aspect-ratio: 488 / 680;
   object-fit: cover;
   display: block;
-  transition: opacity 0.2s;
+  transition: box-shadow 0.15s ease;
   border-radius: 4.75%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .card-info {
@@ -353,9 +357,8 @@ select:disabled {
 }
 
 .card-treatment {
-  font-size: 0.7rem;
-  color: #777;
-  margin-bottom: 2px;
+  font-style: italic;
+  color: #888;
 }
 
 .card-prices {
