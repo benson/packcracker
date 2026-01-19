@@ -427,11 +427,18 @@ select:disabled {
   }
 
   .toggle-stack {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
     width: 100%;
   }
 
   .toggle-group {
     width: 100%;
+  }
+
+  .select-group:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .card-grid {
