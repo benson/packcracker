@@ -405,7 +405,7 @@ function updateFilterToggles(setCode, releaseDate) {
 // ============ Card Fetching & Filtering ============
 
 // Try to load from cache first, fall back to live API
-async function fetchSetCards(setCode, boosterType, minPrice, includeSpecialGuests) {
+async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   // Try cached data first
   try {
     const cached = await fetchCachedCards(setCode, boosterType);
@@ -424,7 +424,7 @@ async function fetchSetCards(setCode, boosterType, minPrice, includeSpecialGuest
   }
 
   // Fall back to live API
-  return fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests);
+  return fetchLiveCards(setCode, boosterType, includeSpecialGuests);
 }
 
 // Fetch from pre-cached JSON files
@@ -546,7 +546,7 @@ const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil'
 const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted'];
 
 // Live fetch from Scryfall API
-async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests) {
+async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   let query = `set:${setCode} lang:en`;
 
   // Jumpstart sets don't use is:booster filter
@@ -555,8 +555,8 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
     query += ' is:booster -is:boosterfun';
   }
 
-  const priceThreshold = Math.max(0.5, minPrice - 0.5);
-  query += ` (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`;
+  // Fetch all cards with any meaningful price (for accurate EV calculation)
+  query += ' (usd>=0.5 OR usd_foil>=0.5)';
 
   const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
 
@@ -581,7 +581,7 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
   }
 
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
-    const specialGuestsCards = await fetchLiveSpecialGuestsCards(setCode, minPrice);
+    const specialGuestsCards = await fetchLiveSpecialGuestsCards(setCode);
     cards = cards.concat(specialGuestsCards);
   }
 
@@ -589,15 +589,14 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGues
 }
 
 // Live fetch for Special Guests (and Big Score for OTJ)
-async function fetchLiveSpecialGuestsCards(setCode, minPrice) {
-  const priceThreshold = Math.max(0.5, minPrice - 0.5);
+async function fetchLiveSpecialGuestsCards(setCode) {
   let allCards = [];
 
   // Fetch Special Guests by collector number range
   const range = SPECIAL_GUESTS_RANGES[setCode];
   if (range) {
     try {
-      const query = `set:spg cn>=${range[0]} cn<=${range[1]} (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`;
+      const query = `set:spg cn>=${range[0]} cn<=${range[1]} (usd>=0.5 OR usd_foil>=0.5)`;
       const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
       const data = await fetchWithRetry(url);
       allCards = allCards.concat(data.data || []);
@@ -609,7 +608,7 @@ async function fetchLiveSpecialGuestsCards(setCode, minPrice) {
   // For OTJ, also fetch The Big Score cards
   if (SETS_WITH_BIG_SCORE.has(setCode)) {
     try {
-      const query = `set:big (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`;
+      const query = `set:big (usd>=0.5 OR usd_foil>=0.5)`;
       const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
       const data = await fetchWithRetry(url);
       allCards = allCards.concat(data.data || []);
@@ -913,22 +912,22 @@ async function loadCards() {
   setLoading(true);
 
   const includeList = listMode === 'include';
-  const cacheKey = `${setCode}-${boosterType}-${minPrice}-${includeList}`;
+  const cacheKey = `${setCode}-${boosterType}-${includeList}`;
 
   try {
-    let rawCards;
+    let allCards;
     if (cardCache.has(cacheKey)) {
-      rawCards = cardCache.get(cacheKey);
+      allCards = cardCache.get(cacheKey);
     } else {
-      rawCards = await fetchSetCards(setCode, boosterType, minPrice, includeList);
-      cardCache.set(cacheKey, rawCards);
+      allCards = await fetchSetCards(setCode, boosterType, includeList);
+      cardCache.set(cacheKey, allCards);
     }
 
     const excludeFoils = foilsMode === 'exclude';
     const excludeRares = raresMode === 'exclude';
-    const cards = filterAndSortCards(rawCards, minPrice, excludeRares, excludeFoils);
+    const cards = filterAndSortCards(allCards, minPrice, excludeRares, excludeFoils);
     const setInfo = setsData.find(s => s.code === setCode);
-    renderCards(cards, rawCards, setInfo, boosterType);
+    renderCards(cards, allCards, setInfo, boosterType);
   } catch (error) {
     console.error('Error loading cards:', error);
     showError('failed to load cards. please try again.');
