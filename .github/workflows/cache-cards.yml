@@ -27,9 +27,24 @@ jobs:
           process.stdin.on('end', () => {
             const data = JSON.parse(Buffer.concat(chunks).toString());
             const validTypes = ['core', 'expansion', 'draft_innovation', 'masters', 'funny'];
+            // Sets that aren't openable as regular booster packs
+            const blacklist = [
+              // Heroes of the Realm (employee-only)
+              'ph23', 'ph22', 'ph21', 'ph20', 'ph19', 'ph18', 'ph17', 'phtr',
+              // Not actual booster products
+              'plst', 'ulst', 'sunf', 'slx', 'cmb1', 'cmb2', 'h17', 'hho', 'punk',
+              // Regional reprints
+              'bchr', '4bb', 'fbb', 'ren', 'rin',
+              // Summer Magic
+              'sum',
+              // Timeshifts (part of other sets)
+              'h1r', 'h2r', 'tsb'
+            ];
             const sets = data.data
               .filter(set =>
                 validTypes.includes(set.set_type) &&
+                !set.digital &&
+                !blacklist.includes(set.code) &&
                 set.card_count > 0 &&
                 new Date(set.released_at) <= new Date()
               )

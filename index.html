@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pack cracker</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,36 +22,58 @@
           <div id="set-dropdown" class="autocomplete-dropdown hidden"></div>
         </div>
         <input type="hidden" id="set-select">
+        <div id="pack-ev" class="pack-ev hidden"></div>
       </div>
 
-      <div class="select-group">
-        <label>booster type</label>
-        <div id="booster-toggle" class="toggle-group">
-          <button type="button" class="toggle-btn active" data-value="play">play</button>
-          <button type="button" class="toggle-btn" data-value="collector">collector</button>
+      <div class="toggle-stack">
+        <div class="select-group">
+          <label>booster type</label>
+          <div id="booster-toggle" class="toggle-group">
+            <button type="button" class="toggle-btn active" data-value="play">play</button>
+            <button type="button" class="toggle-btn" data-value="collector">collector</button>
+          </div>
+          <input type="hidden" id="booster-type" value="play">
         </div>
-        <input type="hidden" id="booster-type" value="play">
-      </div>
 
-      <div class="select-group">
-        <label>minimum price</label>
-        <div id="price-toggle" class="toggle-group">
-          <button type="button" class="toggle-btn" data-value="1">$1</button>
-          <button type="button" class="toggle-btn active" data-value="2">$2</button>
-          <button type="button" class="toggle-btn" data-value="5">$5</button>
-          <button type="button" class="toggle-btn" data-value="10">$10</button>
+        <div class="select-group">
+          <label>minimum price</label>
+          <div id="price-toggle" class="toggle-group">
+            <button type="button" class="toggle-btn" data-value="1">$1</button>
+            <button type="button" class="toggle-btn active" data-value="2">$2</button>
+            <button type="button" class="toggle-btn" data-value="5">$5</button>
+            <button type="button" class="toggle-btn" data-value="10">$10</button>
+          </div>
+          <input type="hidden" id="min-price" value="2">
         </div>
-        <input type="hidden" id="min-price" value="2">
       </div>
 
-      <div class="checkbox-group">
-        <input type="checkbox" id="exclude-rares">
-        <label for="exclude-rares">exclude rares + mythics</label>
-      </div>
+      <div class="toggle-stack">
+        <div class="select-group">
+          <label>foils</label>
+          <div id="foils-toggle" class="toggle-group">
+            <button type="button" class="toggle-btn active" data-value="include">include</button>
+            <button type="button" class="toggle-btn" data-value="exclude">exclude</button>
+          </div>
+          <input type="hidden" id="foils-mode" value="include">
+        </div>
 
-      <div class="checkbox-group">
-        <input type="checkbox" id="include-list">
-        <label for="include-list">include the list / special guests</label>
+        <div class="select-group">
+          <label>rares + mythics</label>
+          <div id="rares-toggle" class="toggle-group">
+            <button type="button" class="toggle-btn active" data-value="include">include</button>
+            <button type="button" class="toggle-btn" data-value="exclude">exclude</button>
+          </div>
+          <input type="hidden" id="rares-mode" value="include">
+        </div>
+
+        <div class="select-group">
+          <label>the list / special guests</label>
+          <div id="list-toggle" class="toggle-group">
+            <button type="button" class="toggle-btn" data-value="include">include</button>
+            <button type="button" class="toggle-btn active" data-value="exclude">exclude</button>
+          </div>
+          <input type="hidden" id="list-mode" value="exclude">
+        </div>
       </div>
     </div>
 

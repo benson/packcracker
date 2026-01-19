@@ -78,6 +78,7 @@ function processCard(card) {
     id: card.id,
     name: card.name,
     set: card.set,
+    collector_number: card.collector_number,
     rarity: card.rarity,
     booster: card.booster,
     image: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || '',
@@ -195,6 +196,23 @@ async function main() {
   if (errors.length > 0) {
     console.log(`Errors: ${errors.length}`);
     errors.forEach(e => console.log(`  - ${e.set}: ${e.error}`));
+  }
+
+  // Cache Special Guests (spg) and The Big Score (big) for Play Booster sets
+  console.log('\nCaching Special Guests and The Big Score...');
+  const specialSets = [
+    { code: 'spg', name: 'Special Guests' },
+    { code: 'big', name: 'The Big Score' }
+  ];
+
+  for (const specialSet of specialSets) {
+    try {
+      const cacheData = await cacheSet(specialSet);
+      const filePath = path.join(dataDir, `${specialSet.code}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(cacheData));
+    } catch (error) {
+      console.error(`  Error caching ${specialSet.code}: ${error.message}`);
+    }
   }
 
   // Write a manifest file with last update time

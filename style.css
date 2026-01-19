@@ -6,7 +6,7 @@
 
 body {
   font-family: "Times New Roman", Times, Georgia, serif;
-  background: #fff;
+  background: #f8f7f4;
   color: #000;
   min-height: 100vh;
   padding: 40px 30px;
@@ -38,8 +38,25 @@ h1 {
   display: flex;
   gap: 30px;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   margin-bottom: 40px;
+}
+
+.toggle-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pack-ev {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.pack-ev .ev-value {
+  color: #000;
+  font-weight: 400;
 }
 
 .select-group {
@@ -130,7 +147,7 @@ select:disabled {
   right: 0;
   max-height: 300px;
   overflow-y: auto;
-  background: #fff;
+  background: #f8f7f4;
   border: 1px solid #000;
   border-top: none;
   z-index: 100;
@@ -149,7 +166,7 @@ select:disabled {
 
 .autocomplete-dropdown .option:hover,
 .autocomplete-dropdown .option.highlighted {
-  background: #f5f5f5;
+  background: #edecea;
 }
 
 .autocomplete-dropdown .option .year {
@@ -326,7 +343,7 @@ select:disabled {
 
 .card-treatment {
   font-size: 0.7rem;
-  color: #999;
+  color: #777;
 }
 
 .error {
@@ -372,6 +389,10 @@ select:disabled {
   .autocomplete-wrapper input[type="text"] {
     width: 100%;
     min-width: unset;
+  }
+
+  .toggle-stack {
+    width: 100%;
   }
 
   .toggle-group {

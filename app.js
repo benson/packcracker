@@ -5,6 +5,31 @@ const SCRYFALL_API = 'https://api.scryfall.com';
 const COLLECTOR_BOOSTER_START = '2019-10-04'; // Throne of Eldraine
 const SET_BOOSTER_START = '2020-09-25';       // Zendikar Rising
 const PLAY_BOOSTER_START = '2024-02-09';      // Murders at Karlov Manor
+const FOIL_START = '1999-02-15';              // Urza's Legacy (first set with foils)
+
+// Special Guests collector number ranges by set
+// These can be queried from Scryfall: set:spg cn>=X cn<=Y
+const SPECIAL_GUESTS_RANGES = {
+  'lci': [1, 18],
+  'mkm': [19, 28],
+  'otj': [29, 38],
+  'mh3': [39, 53],
+  'blb': [54, 63],
+  'dsk': [64, 73],
+  'fdn': [74, 83],
+  'dft': [84, 103],
+  'tdm': [104, 118],
+  'eoe': [119, 128],
+  // Future sets - update as needed
+  'fin': [129, 148],  // Placeholder range
+};
+
+// Sets that have The Big Score cards (OTJ only)
+const SETS_WITH_BIG_SCORE = new Set(['otj']);
+
+// Sets where we can accurately show Special Guests (Play Booster era)
+// For Set Booster era (znr-lci), The List is too complex to track accurately
+const SETS_WITH_SPECIAL_GUESTS = new Set(Object.keys(SPECIAL_GUESTS_RANGES));
 
 // Rate limiting: Scryfall asks for 50-100ms between requests
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -43,8 +68,9 @@ function getStateFromURL() {
     set: params.get('set') || null,
     booster: params.get('booster') || 'play',
     min: params.get('min') || '2',
-    excludeRares: params.get('excludeRares') === 'true',
-    includeList: params.get('includeList') === 'true'
+    foils: params.get('foils') || 'include',
+    rares: params.get('rares') || 'include',
+    list: params.get('list') || 'exclude'
   };
 }
 
@@ -53,8 +79,9 @@ function updateURL(state) {
   if (state.set) params.set('set', state.set);
   if (state.booster !== 'play') params.set('booster', state.booster);
   if (state.min !== '2') params.set('min', state.min);
-  if (state.excludeRares) params.set('excludeRares', 'true');
-  if (state.includeList) params.set('includeList', 'true');
+  if (state.foils !== 'include') params.set('foils', state.foils);
+  if (state.rares !== 'include') params.set('rares', state.rares);
+  if (state.list !== 'exclude') params.set('list', state.list);
 
   const newURL = params.toString()
     ? `${window.location.pathname}?${params.toString()}`
@@ -68,8 +95,9 @@ function getCurrentState() {
     set: document.getElementById('set-select').value,
     booster: document.getElementById('booster-type').value,
     min: document.getElementById('min-price').value,
-    excludeRares: document.getElementById('exclude-rares').checked,
-    includeList: document.getElementById('include-list').checked
+    foils: document.getElementById('foils-mode').value,
+    rares: document.getElementById('rares-mode').value,
+    list: document.getElementById('list-mode').value
   };
 }
 
@@ -77,16 +105,30 @@ function getCurrentState() {
 
 let setsData = [];
 let highlightedIndex = -1;
+let selectedSetDisplay = ''; // Store the display text for the selected set
 
 function setupAutocomplete() {
   const input = document.getElementById('set-input');
   const dropdown = document.getElementById('set-dropdown');
   const hidden = document.getElementById('set-select');
 
-  // Select all and show dropdown on focus
+  // Clear input on focus so user can start typing immediately
   input.addEventListener('focus', () => {
-    input.select();
-    showDropdown(input.value);
+    selectedSetDisplay = input.value; // Remember current value
+    input.value = '';
+    input.placeholder = 'type to search...';
+    showDropdown('');
+  });
+
+  // Restore selected value on blur if nothing new was selected
+  input.addEventListener('blur', () => {
+    // Small delay to allow click on dropdown option to register
+    setTimeout(() => {
+      if (!input.value && selectedSetDisplay) {
+        input.value = selectedSetDisplay;
+        input.placeholder = '';
+      }
+    }, 150);
   });
 
   // Filter on input
@@ -114,6 +156,7 @@ function setupAutocomplete() {
       }
     } else if (e.key === 'Escape') {
       dropdown.classList.add('hidden');
+      input.blur();
     }
   });
 
@@ -169,12 +212,16 @@ function selectSet(code) {
   const dropdown = document.getElementById('set-dropdown');
   const hidden = document.getElementById('set-select');
 
-  input.value = `${set.name.toLowerCase()} (${set.released.slice(0, 4)})`;
+  const displayText = `${set.name.toLowerCase()} (${set.released.slice(0, 4)})`;
+  input.value = displayText;
+  selectedSetDisplay = displayText;
   hidden.value = code;
   dropdown.classList.add('hidden');
   highlightedIndex = -1;
+  input.blur();
 
   updateBoosterTypeOptions(set.released);
+  updateFilterToggles(code, set.released);
   updateURL(getCurrentState());
   loadCards();
 }
@@ -207,6 +254,48 @@ function setupToggles() {
     priceToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     priceHidden.value = btn.dataset.value;
+    onFilterChange();
+  });
+
+  // Foils toggle
+  const foilsToggle = document.getElementById('foils-toggle');
+  const foilsHidden = document.getElementById('foils-mode');
+
+  foilsToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+
+    foilsToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    foilsHidden.value = btn.dataset.value;
+    onFilterChange();
+  });
+
+  // Rares toggle
+  const raresToggle = document.getElementById('rares-toggle');
+  const raresHidden = document.getElementById('rares-mode');
+
+  raresToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+
+    raresToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    raresHidden.value = btn.dataset.value;
+    onFilterChange();
+  });
+
+  // List toggle
+  const listToggle = document.getElementById('list-toggle');
+  const listHidden = document.getElementById('list-mode');
+
+  listToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+
+    listToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    listHidden.value = btn.dataset.value;
     onFilterChange();
   });
 }
@@ -263,20 +352,58 @@ function updateBoosterTypeOptions(releaseDate, preserveValue = null) {
   }
 }
 
+function updateFilterToggles(setCode, releaseDate) {
+  const listToggleGroup = document.getElementById('list-toggle').closest('.select-group');
+  const listLabel = listToggleGroup.querySelector('label');
+  const listHidden = document.getElementById('list-mode');
+
+  const foilsToggleGroup = document.getElementById('foils-toggle').closest('.select-group');
+  const foilsHidden = document.getElementById('foils-mode');
+
+  // Check what this set has
+  const hasSpecialGuests = SETS_WITH_SPECIAL_GUESTS.has(setCode);
+  const hasBigScore = SETS_WITH_BIG_SCORE.has(setCode);
+  const hasFoils = releaseDate >= FOIL_START;
+
+  // Update Special Guests toggle (only for sets we can accurately query)
+  if (hasSpecialGuests) {
+    listToggleGroup.classList.remove('hidden');
+    // Update label based on what's available
+    if (hasBigScore) {
+      listLabel.textContent = 'the big score / special guests';
+    } else {
+      listLabel.textContent = 'special guests';
+    }
+  } else {
+    listToggleGroup.classList.add('hidden');
+    listHidden.value = 'exclude';
+    setToggleValue('list-toggle', 'list-mode', 'exclude');
+  }
+
+  // Update foils toggle
+  if (hasFoils) {
+    foilsToggleGroup.classList.remove('hidden');
+  } else {
+    foilsToggleGroup.classList.add('hidden');
+    foilsHidden.value = 'include'; // Default to include (non-foils only for old sets)
+    setToggleValue('foils-toggle', 'foils-mode', 'include');
+  }
+}
+
 // ============ Card Fetching & Filtering ============
 
 // Try to load from cache first, fall back to live API
-async function fetchSetCards(setCode, boosterType, minPrice, includeList) {
+async function fetchSetCards(setCode, boosterType, minPrice, includeSpecialGuests) {
   // Try cached data first
   try {
     const cached = await fetchCachedCards(setCode, boosterType);
     if (cached && cached.length > 0) {
       console.log(`Loaded ${cached.length} cards from cache for ${setCode}`);
 
-      // If includeList, also get cached list cards
-      if (includeList) {
-        const listCards = await fetchCachedListCards();
-        return [...cached, ...listCards];
+      // If includeSpecialGuests, also get cached Special Guests cards
+      if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
+        const specialGuestsCards = await fetchCachedSpecialGuestsCards(setCode);
+        return [...cached, ...specialGuestsCards];
       }
       return cached;
     }
@@ -285,7 +412,7 @@ async function fetchSetCards(setCode, boosterType, minPrice, includeList) {
   }
 
   // Fall back to live API
-  return fetchLiveCards(setCode, boosterType, minPrice, includeList);
+  return fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests);
 }
 
 // Fetch from pre-cached JSON files
@@ -322,17 +449,57 @@ async function fetchCachedCards(setCode, boosterType) {
   }));
 }
 
-// Fetch cached list/special guests cards
-async function fetchCachedListCards() {
-  const listCards = [];
+// Fetch cached Special Guests cards for a specific set
+async function fetchCachedSpecialGuestsCards(setCode) {
+  const cards = [];
+  const range = SPECIAL_GUESTS_RANGES[setCode];
 
-  for (const setCode of ['plst', 'spg']) {
+  // Try to fetch from spg cache file
+  try {
+    const response = await fetch(`./data/spg.json`);
+    if (response.ok) {
+      const data = await response.json();
+      const allCards = data.collector || data.play || [];
+
+      // Filter to only cards in this set's collector number range
+      const filtered = allCards.filter(card => {
+        const cn = parseInt(card.collector_number || '0');
+        return cn >= range[0] && cn <= range[1];
+      });
+
+      cards.push(...filtered.map(card => ({
+        id: card.id,
+        name: card.name,
+        set: card.set,
+        rarity: card.rarity,
+        collector_number: card.collector_number,
+        booster: card.booster,
+        image_uris: { normal: card.image },
+        scryfall_uri: card.uri,
+        finishes: card.finishes.map(f => f.type),
+        prices: {
+          usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
+          usd_foil: card.finishes.find(f => f.type === 'foil')?.price?.toString() || null,
+          usd_etched: card.finishes.find(f => f.type === 'etched')?.price?.toString() || null,
+        },
+        frame_effects: [],
+        border_color: 'black',
+        full_art: false,
+        promo: false,
+      })));
+    }
+  } catch (e) {
+    // Ignore missing cache files
+  }
+
+  // For OTJ, also fetch The Big Score
+  if (SETS_WITH_BIG_SCORE.has(setCode)) {
     try {
-      const response = await fetch(`./data/${setCode}.json`);
+      const response = await fetch(`./data/big.json`);
       if (response.ok) {
         const data = await response.json();
-        const cards = data.collector || data.play || [];
-        listCards.push(...cards.map(card => ({
+        const bigScoreCards = data.collector || data.play || [];
+        cards.push(...bigScoreCards.map(card => ({
           id: card.id,
           name: card.name,
           set: card.set,
@@ -357,11 +524,11 @@ async function fetchCachedListCards() {
     }
   }
 
-  return listCards;
+  return cards;
 }
 
 // Live fetch from Scryfall API
-async function fetchLiveCards(setCode, boosterType, minPrice, includeList) {
+async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests) {
   let query = `set:${setCode} lang:en`;
 
   if (boosterType !== 'collector') {
@@ -381,35 +548,45 @@ async function fetchLiveCards(setCode, boosterType, minPrice, includeList) {
     if (error.message !== 'HTTP 404') throw error;
   }
 
-  if (includeList) {
-    const listCards = await fetchLiveListCards(minPrice);
-    cards = cards.concat(listCards);
+  if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
+    const specialGuestsCards = await fetchLiveSpecialGuestsCards(setCode, minPrice);
+    cards = cards.concat(specialGuestsCards);
   }
 
   return cards;
 }
 
-// Live fetch for list/special guests
-async function fetchLiveListCards(minPrice) {
+// Live fetch for Special Guests (and Big Score for OTJ)
+async function fetchLiveSpecialGuestsCards(setCode, minPrice) {
   const priceThreshold = Math.max(0.5, minPrice - 0.5);
-  const listQueries = [
-    `set:plst (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`,
-    `set:spg (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`
-  ];
+  let allCards = [];
 
-  let allListCards = [];
-
-  for (const query of listQueries) {
+  // Fetch Special Guests by collector number range
+  const range = SPECIAL_GUESTS_RANGES[setCode];
+  if (range) {
     try {
+      const query = `set:spg cn>=${range[0]} cn<=${range[1]} (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`;
       const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
       const data = await fetchWithRetry(url);
-      allListCards = allListCards.concat(data.data || []);
+      allCards = allCards.concat(data.data || []);
+    } catch (error) {
+      // Ignore 404s (no matching cards)
+    }
+  }
+
+  // For OTJ, also fetch The Big Score cards
+  if (SETS_WITH_BIG_SCORE.has(setCode)) {
+    try {
+      const query = `set:big (usd>=${priceThreshold} OR usd_foil>=${priceThreshold})`;
+      const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
+      const data = await fetchWithRetry(url);
+      allCards = allCards.concat(data.data || []);
     } catch (error) {
       // Ignore 404s
     }
   }
 
-  return allListCards;
+  return allCards;
 }
 
 function getCardTreatment(card, isFoil) {
@@ -480,7 +657,7 @@ function expandCardFinishes(cards) {
   return expanded;
 }
 
-function filterAndSortCards(cards, minPrice, excludeRares) {
+function filterAndSortCards(cards, minPrice, excludeRares, excludeFoils) {
   const expanded = expandCardFinishes(cards);
   return expanded
     .filter(card => card.price >= minPrice)
@@ -489,14 +666,70 @@ function filterAndSortCards(cards, minPrice, excludeRares) {
       const rarity = card.rarity?.toLowerCase();
       return rarity !== 'rare' && rarity !== 'mythic';
     })
+    .filter(card => {
+      if (!excludeFoils) return true;
+      return !card.isFoil;
+    })
     .sort((a, b) => b.price - a.price);
+}
+
+// Calculate expected value of opening a pack
+// Based on pull rates for the rare/mythic slot (main source of value)
+function calculatePackEV(cards) {
+  // Expand all finishes first (we need all versions for EV calculation)
+  const expanded = expandCardFinishes(cards);
+
+  // Group by rarity and separate foil/non-foil
+  const nonFoilRares = expanded.filter(c => c.rarity === 'rare' && !c.isFoil);
+  const nonFoilMythics = expanded.filter(c => c.rarity === 'mythic' && !c.isFoil);
+  const foilRares = expanded.filter(c => c.rarity === 'rare' && c.isFoil);
+  const foilMythics = expanded.filter(c => c.rarity === 'mythic' && c.isFoil);
+
+  // Count unique cards per rarity (for probability calculation)
+  const uniqueRares = new Set(nonFoilRares.map(c => c.id)).size || 1;
+  const uniqueMythics = new Set(nonFoilMythics.map(c => c.id)).size || 1;
+
+  // Play Booster rare/mythic slot: ~87.5% rare, ~12.5% mythic (roughly 7:1)
+  const RARE_RATE = 0.875;
+  const MYTHIC_RATE = 0.125;
+
+  // Calculate EV for rare/mythic slot (non-foil)
+  let ev = 0;
+
+  // Each rare has equal probability: RARE_RATE / uniqueRares
+  for (const card of nonFoilRares) {
+    ev += card.price * (RARE_RATE / uniqueRares);
+  }
+
+  // Each mythic has equal probability: MYTHIC_RATE / uniqueMythics
+  for (const card of nonFoilMythics) {
+    ev += card.price * (MYTHIC_RATE / uniqueMythics);
+  }
+
+  // Foil slot contribution (roughly 1 in 6 packs has a rare/mythic foil)
+  // Simplified: ~10% chance of rare foil, ~2% chance of mythic foil
+  const uniqueFoilRares = new Set(foilRares.map(c => c.id)).size || 1;
+  const uniqueFoilMythics = new Set(foilMythics.map(c => c.id)).size || 1;
+
+  for (const card of foilRares) {
+    ev += card.price * (0.10 / uniqueFoilRares);
+  }
+  for (const card of foilMythics) {
+    ev += card.price * (0.02 / uniqueFoilMythics);
+  }
+
+  return ev;
 }
 
 // ============ Rendering ============
 
-function renderCards(cards) {
+function renderCards(cards, rawCards) {
   const grid = document.getElementById('card-grid');
   const countEl = document.getElementById('card-count');
+  const evEl = document.getElementById('pack-ev');
+
+  // Calculate pack EV from raw cards (before filtering)
+  const packEV = calculatePackEV(rawCards);
 
   if (cards.length === 0) {
     grid.innerHTML = `
@@ -506,11 +739,22 @@ function renderCards(cards) {
       </div>
     `;
     countEl.classList.add('hidden');
+    // Still show EV even if no cards match current filters
+    if (packEV > 0) {
+      evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span>`;
+      evEl.classList.remove('hidden');
+    } else {
+      evEl.classList.add('hidden');
+    }
     return;
   }
 
   countEl.textContent = `showing ${cards.length} card${cards.length === 1 ? '' : 's'}`;
   countEl.classList.remove('hidden');
+
+  // Display pack EV
+  evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span>`;
+  evEl.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
     const imageUrl = card.image_uris?.normal ||
@@ -551,6 +795,7 @@ function setLoading(loading) {
   document.getElementById('card-grid').classList.toggle('hidden', loading);
   if (loading) {
     document.getElementById('card-count').classList.add('hidden');
+    document.getElementById('pack-ev').classList.add('hidden');
   }
 }
 
@@ -560,6 +805,7 @@ function showError(message) {
   errorEl.classList.remove('hidden');
   document.getElementById('card-grid').classList.add('hidden');
   document.getElementById('card-count').classList.add('hidden');
+  document.getElementById('pack-ev').classList.add('hidden');
 }
 
 // ============ Main Logic ============
@@ -570,14 +816,16 @@ async function loadCards() {
   const setCode = document.getElementById('set-select').value;
   const boosterType = document.getElementById('booster-type').value;
   const minPrice = parseFloat(document.getElementById('min-price').value);
-  const excludeRares = document.getElementById('exclude-rares').checked;
-  const includeList = document.getElementById('include-list').checked;
+  const foilsMode = document.getElementById('foils-mode').value;
+  const raresMode = document.getElementById('rares-mode').value;
+  const listMode = document.getElementById('list-mode').value;
 
   if (!setCode) return;
 
   document.getElementById('error').classList.add('hidden');
   setLoading(true);
 
+  const includeList = listMode === 'include';
   const cacheKey = `${setCode}-${boosterType}-${minPrice}-${includeList}`;
 
   try {
@@ -589,8 +837,10 @@ async function loadCards() {
       cardCache.set(cacheKey, rawCards);
     }
 
-    const cards = filterAndSortCards(rawCards, minPrice, excludeRares);
-    renderCards(cards);
+    const excludeFoils = foilsMode === 'exclude';
+    const excludeRares = raresMode === 'exclude';
+    const cards = filterAndSortCards(rawCards, minPrice, excludeRares, excludeFoils);
+    renderCards(cards, rawCards);
   } catch (error) {
     console.error('Error loading cards:', error);
     showError('failed to load cards. please try again.');
@@ -609,8 +859,6 @@ function onFilterChange() {
 async function init() {
   const setInput = document.getElementById('set-input');
   const setHidden = document.getElementById('set-select');
-  const excludeRares = document.getElementById('exclude-rares');
-  const includeList = document.getElementById('include-list');
 
   try {
     // Load sets
@@ -633,20 +881,22 @@ async function init() {
     }
 
     // Set initial values
-    setInput.value = `${initialSet.name.toLowerCase()} (${initialSet.released.slice(0, 4)})`;
+    const initialDisplay = `${initialSet.name.toLowerCase()} (${initialSet.released.slice(0, 4)})`;
+    setInput.value = initialDisplay;
+    selectedSetDisplay = initialDisplay;
     setHidden.value = initialSet.code;
-    excludeRares.checked = urlState.excludeRares;
-    includeList.checked = urlState.includeList;
 
     // Set booster type options based on set era, then apply URL value
     updateBoosterTypeOptions(initialSet.released, urlState.booster);
 
-    // Set price toggle from URL
-    setToggleValue('price-toggle', 'min-price', urlState.min);
+    // Update filter toggles based on what this set has
+    updateFilterToggles(initialSet.code, initialSet.released);
 
-    // Event listeners for checkboxes
-    excludeRares.addEventListener('change', onFilterChange);
-    includeList.addEventListener('change', onFilterChange);
+    // Set toggles from URL (after updateFilterToggles so visibility is set first)
+    setToggleValue('price-toggle', 'min-price', urlState.min);
+    setToggleValue('foils-toggle', 'foils-mode', urlState.foils);
+    setToggleValue('rares-toggle', 'rares-mode', urlState.rares);
+    setToggleValue('list-toggle', 'list-mode', urlState.list);
 
     // Load initial cards
     await loadCards();

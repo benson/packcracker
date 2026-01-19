@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 32 32"
+     shape-rendering="crispEdges">
+
+  <g transform="translate(16 16) rotate(-12) scale(0.92) translate(-16 -16)">
+
+    <!-- shadow -->
+    <g opacity="0.35">
+      <rect x="7" y="5" width="20" height="24" fill="#000"/>
+    </g>
+
+    <!-- card -->
+    <rect x="6" y="4" width="20" height="24" fill="#1a120d"/>
+    <rect x="7" y="5" width="18" height="22" fill="#6b4a2d"/>
+    <rect x="8" y="6" width="16" height="20" fill="#9a6b3e"/>
+
+    <!-- oval -->
+    <ellipse cx="16" cy="16"
+             rx="7" ry="10"
+             fill="#b06a44"
+             stroke="#2c4ea2"
+             stroke-width="1"/>
+
+    <!-- mana dots -->
+    <rect x="15" y="13" width="2" height="2" fill="#e8e3d7"/>
+    <rect x="13" y="15" width="2" height="2" fill="#2f7d44"/>
+    <rect x="17" y="15" width="2" height="2" fill="#2f6fb3"/>
+    <rect x="14" y="18" width="2" height="2" fill="#c23b2b"/>
+    <rect x="16" y="18" width="2" height="2" fill="#1b1b1c"/>
+
+    <!-- corner dots -->
+    <rect x="8" y="6" width="1" height="1" fill="#b93a2a"/>
+    <rect x="23" y="6" width="1" height="1" fill="#b93a2a"/>
+    <rect x="8" y="25" width="1" height="1" fill="#b93a2a"/>
+    <rect x="23" y="25" width="1" height="1" fill="#b93a2a"/>
+
+  </g>
+</svg>
