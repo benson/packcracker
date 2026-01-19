@@ -35,7 +35,9 @@ jobs:
               // Heroes of the Realm (employee-only)
               'ph23', 'ph22', 'ph21', 'ph20', 'ph19', 'ph18', 'ph17', 'phtr',
               // Not actual booster products
-              'plst', 'ulst', 'sunf', 'slx', 'cmb1', 'cmb2', 'h17', 'hho', 'punk',
+              'plst', 'ulst', 'sunf', 'slx', 'cmb1', 'cmb2', 'h17', 'hho', 'punk', 'unk',
+              // Promo/box sets (not boosters)
+              'ptg', 'und',
               // Bonus sheets (part of other sets)
               'big', 'spg',
               // Regional reprints
