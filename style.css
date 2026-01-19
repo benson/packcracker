@@ -336,6 +336,7 @@ select:disabled {
   display: block;
   transition: opacity 0.2s;
   border-radius: 4.75%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .card-info {
@@ -343,7 +344,8 @@ select:disabled {
 }
 
 .card-name {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -357,7 +359,7 @@ select:disabled {
 }
 
 .card-prices {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #000;
 }
 
@@ -366,8 +368,9 @@ select:disabled {
 }
 
 .finish-type {
-  color: #888;
-  font-size: 0.7rem;
+  color: #999;
+  font-size: 0.65rem;
+  margin-right: 1px;
 }
 
 .error {
@@ -460,14 +463,14 @@ select:disabled {
   }
 
   .card-name {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
 
   .card-prices {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
   .finish-type {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
   }
 }
