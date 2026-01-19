@@ -350,21 +350,24 @@ select:disabled {
   text-overflow: ellipsis;
 }
 
-.card-details {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.card-price {
-  color: #000;
-}
-
 .card-treatment {
   font-size: 0.7rem;
   color: #777;
+  margin-bottom: 2px;
+}
+
+.card-prices {
+  font-size: 0.8rem;
+  color: #000;
+}
+
+.finish-price {
+  white-space: nowrap;
+}
+
+.finish-type {
+  color: #888;
+  font-size: 0.7rem;
 }
 
 .error {
@@ -460,7 +463,11 @@ select:disabled {
     font-size: 0.75rem;
   }
 
-  .card-details {
+  .card-prices {
     font-size: 0.7rem;
+  }
+
+  .finish-type {
+    font-size: 0.65rem;
   }
 }

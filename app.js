@@ -662,7 +662,9 @@ function expandCardFinishes(cards) {
 
 function filterAndSortCards(cards, minPrice, excludeRares, excludeFoils) {
   const expanded = expandCardFinishes(cards);
-  return expanded
+
+  // Filter first
+  const filtered = expanded
     .filter(card => card.price >= minPrice)
     .filter(card => {
       if (!excludeRares) return true;
@@ -672,8 +674,38 @@ function filterAndSortCards(cards, minPrice, excludeRares, excludeFoils) {
     .filter(card => {
       if (!excludeFoils) return true;
       return !card.isFoil;
-    })
-    .sort((a, b) => b.price - a.price);
+    });
+
+  // Group by card ID to merge foil/nonfoil
+  const grouped = new Map();
+  for (const card of filtered) {
+    if (!grouped.has(card.id)) {
+      grouped.set(card.id, {
+        ...card,
+        finishPrices: [],
+        maxPrice: 0
+      });
+    }
+    const group = grouped.get(card.id);
+    group.finishPrices.push({
+      type: card.isFoil ? 'foil' : (card.finishKey === 'etched' ? 'etched' : 'regular'),
+      price: card.price
+    });
+    if (card.price > group.maxPrice) {
+      group.maxPrice = card.price;
+      // Use the highest-priced version's treatment as the base
+      group.treatment = card.treatment;
+      group.isFoil = card.isFoil;
+    }
+  }
+
+  // Sort finish prices within each card (highest first)
+  for (const card of grouped.values()) {
+    card.finishPrices.sort((a, b) => b.price - a.price);
+  }
+
+  // Sort by max price
+  return Array.from(grouped.values()).sort((a, b) => b.maxPrice - a.maxPrice);
 }
 
 // Calculate expected value of opening a pack
@@ -764,7 +796,15 @@ function renderCards(cards, rawCards) {
                      card.card_faces?.[0]?.image_uris?.normal ||
                      '';
     const scryfallUrl = card.scryfall_uri || '#';
-    const treatment = card.treatment.toLowerCase();
+
+    // Build treatment string (without foil since we show it in prices)
+    let treatment = card.treatment.toLowerCase().replace(/, ?foil$/i, '').replace(/^foil, ?/i, '').replace(/^foil$/i, '');
+    if (!treatment || treatment === 'regular') treatment = '';
+
+    // Build price display
+    const priceDisplay = card.finishPrices
+      .map(f => `<span class="finish-price"><span class="finish-type">${f.type}</span> $${f.price.toFixed(2)}</span>`)
+      .join(' · ');
 
     return `
       <div class="card" data-url="${scryfallUrl}">
@@ -776,10 +816,8 @@ function renderCards(cards, rawCards) {
         />
         <div class="card-info">
           <div class="card-name" title="${card.name}">${card.name.toLowerCase()}</div>
-          <div class="card-details">
-            <span class="card-treatment">${treatment}</span>
-            <span class="card-price">$${card.price.toFixed(2)}</span>
-          </div>
+          ${treatment ? `<div class="card-treatment">${treatment}</div>` : ''}
+          <div class="card-prices">${priceDisplay}</div>
         </div>
       </div>
     `;
