@@ -264,6 +264,27 @@ select:disabled {
   padding-left: 0;
 }
 
+/* ascii ad sign */
+.ad-space {
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.ascii-sign {
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #999;
+  margin: 0;
+  text-transform: none;
+}
+
+@media (max-width: 900px) {
+  .ad-space {
+    display: none;
+  }
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -372,17 +393,31 @@ select:disabled {
 /* responsive */
 @media (max-width: 600px) {
   body {
-    padding: 30px 20px;
+    padding: 20px 15px;
+    overflow-x: hidden;
   }
 
   h1 {
     font-size: 1.3rem;
   }
 
+  .container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .controls {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 20px;
+  }
+
+  .select-group {
+    width: 100%;
+  }
+
+  .autocomplete-wrapper {
+    width: 100%;
   }
 
   select,
@@ -401,6 +436,18 @@ select:disabled {
 
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 10px;
+  }
+
+  .card-image {
+    width: 100%;
+  }
+
+  .card-name {
+    font-size: 0.75rem;
+  }
+
+  .card-details {
+    font-size: 0.7rem;
   }
 }
