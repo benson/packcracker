@@ -86,6 +86,77 @@ select:disabled {
   cursor: not-allowed;
 }
 
+/* autocomplete styling */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-wrapper input[type="text"] {
+  padding: 8px 0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  border: none;
+  border-bottom: 1px solid #000;
+  border-radius: 0;
+  background: transparent;
+  color: #000;
+  min-width: 280px;
+  text-transform: lowercase;
+  outline: none;
+}
+
+.autocomplete-wrapper input[type="text"]:hover {
+  border-bottom-color: #666;
+}
+
+.autocomplete-wrapper input[type="text"]:focus {
+  border-bottom-width: 2px;
+}
+
+.autocomplete-wrapper input[type="text"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.autocomplete-wrapper input[type="text"]::placeholder {
+  color: #999;
+  text-transform: lowercase;
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #000;
+  border-top: none;
+  z-index: 100;
+}
+
+.autocomplete-dropdown .option {
+  padding: 10px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #eee;
+}
+
+.autocomplete-dropdown .option:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-dropdown .option:hover,
+.autocomplete-dropdown .option.highlighted {
+  background: #f5f5f5;
+}
+
+.autocomplete-dropdown .option .year {
+  color: #999;
+  margin-left: 4px;
+}
+
 /* checkbox styling */
 .checkbox-group {
   display: flex;
@@ -118,6 +189,62 @@ select:disabled {
 .checkbox-group label {
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+/* toggle button group */
+.toggle-group {
+  display: flex;
+  border-bottom: 1px solid #000;
+}
+
+.toggle-group.single {
+  border-bottom: none;
+}
+
+.toggle-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #999;
+  cursor: pointer;
+  text-transform: lowercase;
+  transition: color 0.15s;
+  position: relative;
+}
+
+.toggle-btn:hover {
+  color: #666;
+}
+
+.toggle-btn.active {
+  color: #000;
+}
+
+.toggle-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+}
+
+.toggle-group.single .toggle-btn {
+  cursor: default;
+  color: #000;
+}
+
+.toggle-group.single .toggle-btn::after {
+  display: none;
+}
+
+.toggle-btn:first-child {
+  padding-left: 0;
 }
 
 .loading {
@@ -241,7 +368,13 @@ select:disabled {
     gap: 20px;
   }
 
-  select {
+  select,
+  .autocomplete-wrapper input[type="text"] {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .toggle-group {
     width: 100%;
   }
 
