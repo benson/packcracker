@@ -59,6 +59,18 @@ h1 {
   font-weight: 400;
 }
 
+.pack-ev .tcg-link {
+  margin-left: 8px;
+  color: #888;
+  text-decoration: none;
+  border-bottom: 1px solid #ccc;
+}
+
+.pack-ev .tcg-link:hover {
+  color: #000;
+  border-bottom-color: #000;
+}
+
 .select-group {
   display: flex;
   flex-direction: column;
@@ -268,27 +280,6 @@ select:disabled {
   padding-left: 0;
 }
 
-/* ascii ad sign */
-.ad-space {
-  margin-left: auto;
-  align-self: flex-start;
-}
-
-.ascii-sign {
-  font-family: monospace;
-  font-size: 11px;
-  line-height: 1.2;
-  color: #999;
-  margin: 0;
-  text-transform: none;
-}
-
-@media (max-width: 900px) {
-  .ad-space {
-    display: none;
-  }
-}
-
 .loading {
   display: flex;
   align-items: center;
@@ -433,6 +424,7 @@ select:disabled {
   .autocomplete-wrapper input[type="text"] {
     width: 100%;
     min-width: unset;
+    font-size: 16px; /* Prevents iOS zoom on focus */
   }
 
   .toggle-stack {

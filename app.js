@@ -7,6 +7,9 @@ const SET_BOOSTER_START = '2020-09-25';       // Zendikar Rising
 const PLAY_BOOSTER_START = '2024-02-09';      // Murders at Karlov Manor
 const FOIL_START = '1999-02-15';              // Urza's Legacy (first set with foils)
 
+// Jumpstart sets have their own booster type (themed half-decks)
+const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
+
 // Special Guests collector number ranges by set
 // These can be queried from Scryfall: set:spg cn>=X cn<=Y
 const SPECIAL_GUESTS_RANGES = {
@@ -184,7 +187,7 @@ function showDropdown(filter) {
   const filtered = setsData.filter(set =>
     set.name.toLowerCase().includes(filterLower) ||
     set.code.toLowerCase().includes(filterLower)
-  ).slice(0, 50); // Limit to 50 results
+  ).slice(0, 200); // Limit to 200 results
 
   if (filtered.length === 0) {
     dropdown.classList.add('hidden');
@@ -220,7 +223,7 @@ function selectSet(code) {
   highlightedIndex = -1;
   input.blur();
 
-  updateBoosterTypeOptions(set.released);
+  updateBoosterTypeOptions(set.released, code);
   updateFilterToggles(code, set.released);
   updateURL(getCurrentState());
   loadCards();
@@ -322,9 +325,18 @@ function getBoosterEra(releaseDate) {
   }
 }
 
-function updateBoosterTypeOptions(releaseDate, preserveValue = null) {
+function updateBoosterTypeOptions(releaseDate, setCode, preserveValue = null) {
   const boosterToggle = document.getElementById('booster-toggle');
   const boosterHidden = document.getElementById('booster-type');
+
+  // Jumpstart sets have their own booster type
+  if (JUMPSTART_SETS.has(setCode)) {
+    boosterToggle.innerHTML = '<button type="button" class="toggle-btn active" data-value="play">jumpstart</button>';
+    boosterToggle.classList.add('single');
+    boosterHidden.value = 'play';
+    return;
+  }
+
   const era = getBoosterEra(releaseDate);
 
   if (era === 'draft') {
@@ -531,7 +543,8 @@ async function fetchCachedSpecialGuestsCards(setCode) {
 async function fetchLiveCards(setCode, boosterType, minPrice, includeSpecialGuests) {
   let query = `set:${setCode} lang:en`;
 
-  if (boosterType !== 'collector') {
+  // Jumpstart sets don't use is:booster filter
+  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
     // For Play Boosters, exclude Collector Booster exclusives
     // is:booster alone isn't reliable, so also exclude "boosterfun" variants
     // (showcase, extended art, borderless, textured foil, etc.)
@@ -758,13 +771,28 @@ function calculatePackEV(cards) {
 
 // ============ Rendering ============
 
-function renderCards(cards, rawCards) {
+function getTcgPlayerUrl(setName, boosterType) {
+  // Build a TCGPlayer search URL for the booster product
+  let searchTerm = setName;
+  if (boosterType === 'collector') {
+    searchTerm += ' collector booster';
+  } else {
+    searchTerm += ' booster';
+  }
+  return `https://www.tcgplayer.com/search/magic/product?productLineName=magic&q=${encodeURIComponent(searchTerm)}&view=grid`;
+}
+
+function renderCards(cards, rawCards, setInfo, boosterType) {
   const grid = document.getElementById('card-grid');
   const countEl = document.getElementById('card-count');
   const evEl = document.getElementById('pack-ev');
 
   // Calculate pack EV from raw cards (before filtering)
   const packEV = calculatePackEV(rawCards);
+
+  // Build TCGPlayer link
+  const tcgUrl = setInfo ? getTcgPlayerUrl(setInfo.name, boosterType) : null;
+  const tcgLink = tcgUrl ? `<a href="${tcgUrl}" target="_blank" class="tcg-link">buy on tcgplayer</a>` : '';
 
   if (cards.length === 0) {
     grid.innerHTML = `
@@ -776,7 +804,7 @@ function renderCards(cards, rawCards) {
     countEl.classList.add('hidden');
     // Still show EV even if no cards match current filters
     if (packEV > 0) {
-      evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span>`;
+      evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span> ${tcgLink}`;
       evEl.classList.remove('hidden');
     } else {
       evEl.classList.add('hidden');
@@ -787,8 +815,8 @@ function renderCards(cards, rawCards) {
   countEl.textContent = `showing ${cards.length} card${cards.length === 1 ? '' : 's'}`;
   countEl.classList.remove('hidden');
 
-  // Display pack EV
-  evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span>`;
+  // Display pack EV with TCGPlayer link
+  evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span> ${tcgLink}`;
   evEl.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
@@ -883,7 +911,8 @@ async function loadCards() {
     const excludeFoils = foilsMode === 'exclude';
     const excludeRares = raresMode === 'exclude';
     const cards = filterAndSortCards(rawCards, minPrice, excludeRares, excludeFoils);
-    renderCards(cards, rawCards);
+    const setInfo = setsData.find(s => s.code === setCode);
+    renderCards(cards, rawCards, setInfo, boosterType);
   } catch (error) {
     console.error('Error loading cards:', error);
     showError('failed to load cards. please try again.');
@@ -930,7 +959,7 @@ async function init() {
     setHidden.value = initialSet.code;
 
     // Set booster type options based on set era, then apply URL value
-    updateBoosterTypeOptions(initialSet.released, urlState.booster);
+    updateBoosterTypeOptions(initialSet.released, initialSet.code, urlState.booster);
 
     // Update filter toggles based on what this set has
     updateFilterToggles(initialSet.code, initialSet.released);

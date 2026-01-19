@@ -12,6 +12,9 @@ const SCRYFALL_API = 'https://api.scryfall.com';
 const MIN_PRICE = 1; // Cache cards worth $1+
 const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 
+// Jumpstart sets have their own booster type (no play/collector distinction)
+const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url, retries = 3) {
@@ -37,7 +40,8 @@ async function fetchWithRetry(url, retries = 3) {
 async function fetchSetCards(setCode, boosterType) {
   let query = `set:${setCode} lang:en`;
 
-  if (boosterType !== 'collector') {
+  // Jumpstart sets don't use is:booster filter
+  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
     // Exclude boosterfun variants (showcase, extended art, etc.) from Play Booster results
     // These are Collector Booster exclusives
     query += ' is:booster -is:boosterfun';
