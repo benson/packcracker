@@ -414,8 +414,8 @@ async function fetchCachedSpecialGuestsCards(setCode) {
 async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   let query = 'set:' + setCode + ' lang:en';
 
-  // Jumpstart sets don't use is:booster filter
-  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
+  // Jumpstart and draft-only sets don't use is:booster filter
+  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode) && !DRAFT_ONLY_SETS.has(setCode)) {
     // For Play Boosters, use is:booster to get base set
     query += ' is:booster -is:boosterfun';
   }
