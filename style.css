@@ -433,28 +433,6 @@ select:disabled {
   color: #666;
 }
 
-footer {
-  position: fixed;
-  bottom: 20px;
-  right: 30px;
-  font-size: 0.75rem;
-  color: #999;
-  background: rgba(248, 247, 244, 0.85);
-  padding: 6px 10px;
-  border-radius: 4px;
-}
-
-footer a {
-  color: #999;
-  text-decoration: none;
-  border-bottom: 1px solid #ccc;
-}
-
-footer a:hover {
-  color: #000;
-  border-bottom-color: #000;
-}
-
 /* responsive */
 @media (max-width: 600px) {
   body {
