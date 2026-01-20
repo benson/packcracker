@@ -2,6 +2,9 @@
      viewBox="0 0 32 32"
      shape-rendering="crispEdges">
 
+  <!-- background matching page color -->
+  <rect width="32" height="32" fill="#f8f7f4"/>
+
   <g transform="translate(16 16) rotate(-12) scale(0.92) translate(-16 -16)">
 
     <!-- shadow -->
