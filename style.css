@@ -302,6 +302,52 @@ select:disabled {
   to { transform: rotate(360deg); }
 }
 
+.grid-toggle-group {
+  display: none;
+}
+
+.grid-toggle {
+  display: flex;
+  border-bottom: 1px solid #000;
+}
+
+.grid-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: #999;
+  cursor: pointer;
+  letter-spacing: -0.05em;
+  transition: color 0.15s ease;
+  position: relative;
+}
+
+.grid-btn:first-child {
+  padding-left: 0;
+}
+
+.grid-btn:hover {
+  color: #666;
+}
+
+.grid-btn.active {
+  color: #000;
+}
+
+.grid-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+}
+
 .card-count {
   color: #999;
   margin-bottom: 20px;
@@ -412,8 +458,12 @@ footer a:hover {
 /* responsive */
 @media (max-width: 600px) {
   body {
-    padding: 20px 15px;
+    padding: 15px 15px;
     overflow-x: hidden;
+  }
+
+  header {
+    margin-bottom: 20px;
   }
 
   h1 {
@@ -428,10 +478,12 @@ footer a:hover {
   .controls {
     flex-direction: column;
     align-items: stretch;
-    gap: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
   .select-group {
+    gap: 0;
     width: 100%;
   }
 
@@ -444,12 +496,13 @@ footer a:hover {
     width: 100%;
     min-width: unset;
     font-size: 16px; /* Prevents iOS zoom on focus */
+    padding-top: 4px;
   }
 
   .toggle-stack {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+    gap: 14px;
     width: 100%;
   }
 
@@ -461,10 +514,29 @@ footer a:hover {
     grid-column: 1 / -1;
   }
 
+  .grid-toggle-group {
+    display: flex;
+  }
+
   .card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     width: 100%;
+  }
+
+  .card-grid.cols-1 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .card-grid.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .card-grid.cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .card {
@@ -480,11 +552,39 @@ footer a:hover {
     font-size: 0.8rem;
   }
 
+  .cols-1 .card-name {
+    font-size: 0.9rem;
+  }
+
+  .cols-3 .card-name {
+    font-size: 0.7rem;
+  }
+
+  .cols-4 .card-name {
+    font-size: 0.65rem;
+  }
+
   .card-prices {
     font-size: 0.65rem;
   }
 
+  .cols-1 .card-prices {
+    font-size: 0.75rem;
+  }
+
+  .cols-3 .card-prices {
+    font-size: 0.55rem;
+  }
+
+  .cols-4 .card-prices {
+    font-size: 0.5rem;
+  }
+
   .finish-type {
     font-size: 0.55rem;
+  }
+
+  .cols-4 .finish-type {
+    font-size: 0.45rem;
   }
 }

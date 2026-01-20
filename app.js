@@ -301,6 +301,36 @@ function setupToggles() {
     listHidden.value = btn.dataset.value;
     onFilterChange();
   });
+
+  // Grid columns toggle (mobile only)
+  const gridToggle = document.getElementById('grid-toggle');
+  const cardGrid = document.getElementById('card-grid');
+
+  // Restore from localStorage
+  const savedCols = localStorage.getItem('gridCols') || '2';
+  setGridCols(savedCols);
+
+  gridToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.grid-btn');
+    if (!btn) return;
+
+    gridToggle.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cols = btn.dataset.cols;
+    setGridCols(cols);
+    localStorage.setItem('gridCols', cols);
+  });
+
+  function setGridCols(cols) {
+    cardGrid.classList.remove('cols-1', 'cols-3', 'cols-4');
+    if (cols === '1') cardGrid.classList.add('cols-1');
+    if (cols === '3') cardGrid.classList.add('cols-3');
+    if (cols === '4') cardGrid.classList.add('cols-4');
+    // Update active button
+    gridToggle.querySelectorAll('.grid-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cols === cols);
+    });
+  }
 }
 
 function setToggleValue(toggleId, hiddenId, value) {
