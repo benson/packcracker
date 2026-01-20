@@ -8,6 +8,7 @@ import {
   PLAY_BOOSTER_START,
   FOIL_START,
   JUMPSTART_SETS,
+  DRAFT_ONLY_SETS,
   SPECIAL_GUESTS_RANGES,
   SETS_WITH_BIG_SCORE,
   SETS_WITH_SPECIAL_GUESTS,
@@ -196,6 +197,14 @@ function updateBoosterTypeOptions(releaseDate, setCode, preserveValue = null) {
   // Jumpstart sets have their own booster type
   if (JUMPSTART_SETS.has(setCode)) {
     boosterToggle.innerHTML = '<button type="button" class="toggle-btn active" data-value="play">jumpstart</button>';
+    boosterToggle.classList.add('single');
+    boosterHidden.value = 'play';
+    return;
+  }
+
+  // Draft-only sets (masters sets, mystery booster, etc.)
+  if (DRAFT_ONLY_SETS.has(setCode)) {
+    boosterToggle.innerHTML = '<button type="button" class="toggle-btn active" data-value="play">draft booster</button>';
     boosterToggle.classList.add('single');
     boosterHidden.value = 'play';
     return;
