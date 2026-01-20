@@ -416,8 +416,9 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
 
   // Jumpstart and draft-only sets don't use is:booster filter
   if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode) && !DRAFT_ONLY_SETS.has(setCode)) {
-    // For Play Boosters, use is:booster to get base set
-    query += ' is:booster -is:boosterfun';
+    // For Play Boosters, include boosterfun cards (showcase/borderless appear in wildcard slot)
+    // Collector exclusives are filtered client-side
+    query += ' is:booster';
   }
 
   // Fetch all cards with any meaningful price (for accurate EV calculation)
