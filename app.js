@@ -278,25 +278,37 @@ function updateFilterToggles(setCode, releaseDate) {
 
 // Try to load from cache first, fall back to live API
 async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
+  let cards = [];
+
   // Try cached data first
   try {
     const cached = await fetchCachedCards(setCode, boosterType);
     if (cached && cached.length > 0) {
       console.log('Loaded ' + cached.length + ' cards from cache for ' + setCode);
+      cards = cached;
 
       // If includeSpecialGuests, also get cached Special Guests cards
       if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
         const specialGuestsCards = await fetchCachedSpecialGuestsCards(setCode);
-        return [...cached, ...specialGuestsCards];
+        cards = [...cards, ...specialGuestsCards];
       }
-      return cached;
     }
   } catch (e) {
     console.log('Cache miss for ' + setCode + ', fetching live...');
   }
 
-  // Fall back to live API
-  return fetchLiveCards(setCode, boosterType, includeSpecialGuests);
+  // Fall back to live API if no cache
+  if (cards.length === 0) {
+    cards = await fetchLiveCards(setCode, boosterType, includeSpecialGuests);
+  }
+
+  // Always fetch bonus sheet cards (like Avatar source material)
+  if (BONUS_SHEET_SETS[setCode]) {
+    const bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
+    cards = [...cards, ...bonusCards];
+  }
+
+  return cards;
 }
 
 // Fetch from pre-cached JSON files
@@ -450,12 +462,6 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
     const specialGuestsCards = await fetchLiveSpecialGuestsCards(setCode);
     cards = cards.concat(specialGuestsCards);
-  }
-
-  // Fetch bonus sheet cards (like Avatar source material cards)
-  if (BONUS_SHEET_SETS[setCode]) {
-    const bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
-    cards = cards.concat(bonusCards);
   }
 
   return cards;
