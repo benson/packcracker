@@ -308,6 +308,17 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
     cards = [...cards, ...bonusCards];
   }
 
+  // Filter out collector exclusives for play boosters (unified filter for cache + live)
+  if (boosterType !== 'collector') {
+    cards = cards.filter(card => {
+      const promos = card.promo_types || [];
+      const frames = card.frame_effects || [];
+      const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
+      const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
+      return !hasExclusivePromo && !hasExclusiveFrame;
+    });
+  }
+
   return cards;
 }
 
@@ -338,7 +349,9 @@ async function fetchCachedCards(setCode, boosterType) {
       card.showcase && 'showcase',
       card.extendedart && 'extendedart',
       card.etched && 'etched',
+      card.inverted && 'inverted',
     ].filter(Boolean),
+    promo_types: card.promo_types || [],
     border_color: card.borderless ? 'borderless' : 'black',
     full_art: card.fullart,
     promo: card.promo,
