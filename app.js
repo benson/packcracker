@@ -1,67 +1,21 @@
-// Scryfall API helpers
+// Pack Cracker - MTG Booster Value Guide
+import {
+  fetchSets,
+  createSetAutocomplete,
+  delay,
+  fetchWithRetry,
+  COLLECTOR_BOOSTER_START,
+  PLAY_BOOSTER_START,
+  FOIL_START,
+  JUMPSTART_SETS,
+  SPECIAL_GUESTS_RANGES,
+  SETS_WITH_BIG_SCORE,
+  SETS_WITH_SPECIAL_GUESTS,
+  COLLECTOR_EXCLUSIVE_PROMOS,
+  COLLECTOR_EXCLUSIVE_FRAMES
+} from 'https://bensonperry.com/shared/mtg.js';
+
 const SCRYFALL_API = 'https://api.scryfall.com';
-
-// Key dates for booster type eras
-const COLLECTOR_BOOSTER_START = '2019-10-04'; // Throne of Eldraine
-const SET_BOOSTER_START = '2020-09-25';       // Zendikar Rising
-const PLAY_BOOSTER_START = '2024-02-09';      // Murders at Karlov Manor
-const FOIL_START = '1999-02-15';              // Urza's Legacy (first set with foils)
-
-// Jumpstart sets have their own booster type (themed half-decks)
-const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
-
-// Special Guests collector number ranges by set
-// These can be queried from Scryfall: set:spg cn>=X cn<=Y
-const SPECIAL_GUESTS_RANGES = {
-  'lci': [1, 18],
-  'mkm': [19, 28],
-  'otj': [29, 38],
-  'mh3': [39, 53],
-  'blb': [54, 63],
-  'dsk': [64, 73],
-  'fdn': [74, 83],
-  'dft': [84, 103],
-  'tdm': [104, 118],
-  'eoe': [119, 128],
-  // Future sets - update as needed
-  'fin': [129, 148],  // Placeholder range
-};
-
-// Sets that have The Big Score cards (OTJ only)
-const SETS_WITH_BIG_SCORE = new Set(['otj']);
-
-// Sets where we can accurately show Special Guests (Play Booster era)
-// For Set Booster era (znr-lci), The List is too complex to track accurately
-const SETS_WITH_SPECIAL_GUESTS = new Set(Object.keys(SPECIAL_GUESTS_RANGES));
-
-// Rate limiting: Scryfall asks for 50-100ms between requests
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Fetch with retry logic
-async function fetchWithRetry(url, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url);
-      if (response.status === 429) {
-        await delay(1000);
-        continue;
-      }
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      await delay(100 * (i + 1));
-    }
-  }
-}
-
-// Load sets from static JSON file
-async function fetchSets() {
-  const response = await fetch('./sets.json');
-  return await response.json();
-}
 
 // ============ URL State Management ============
 
@@ -87,7 +41,7 @@ function updateURL(state) {
   if (state.list !== 'exclude') params.set('list', state.list);
 
   const newURL = params.toString()
-    ? `${window.location.pathname}?${params.toString()}`
+    ? window.location.pathname + '?' + params.toString()
     : window.location.pathname;
 
   window.history.replaceState({}, '', newURL);
@@ -104,130 +58,10 @@ function getCurrentState() {
   };
 }
 
-// ============ Autocomplete ============
+// ============ State ============
 
 let setsData = [];
-let highlightedIndex = -1;
-let selectedSetDisplay = ''; // Store the display text for the selected set
-
-function setupAutocomplete() {
-  const input = document.getElementById('set-input');
-  const dropdown = document.getElementById('set-dropdown');
-  const hidden = document.getElementById('set-select');
-
-  // Clear input on focus so user can start typing immediately
-  input.addEventListener('focus', () => {
-    selectedSetDisplay = input.value; // Remember current value
-    input.value = '';
-    input.placeholder = 'type to search...';
-    showDropdown('');
-  });
-
-  // Restore selected value on blur if nothing new was selected
-  input.addEventListener('blur', () => {
-    // Small delay to allow click on dropdown option to register
-    setTimeout(() => {
-      if (!input.value && selectedSetDisplay) {
-        input.value = selectedSetDisplay;
-        input.placeholder = '';
-      }
-    }, 150);
-  });
-
-  // Filter on input
-  input.addEventListener('input', () => {
-    highlightedIndex = -1;
-    showDropdown(input.value);
-  });
-
-  // Keyboard navigation
-  input.addEventListener('keydown', (e) => {
-    const options = dropdown.querySelectorAll('.option');
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      highlightedIndex = Math.min(highlightedIndex + 1, options.length - 1);
-      updateHighlight(options);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      highlightedIndex = Math.max(highlightedIndex - 1, 0);
-      updateHighlight(options);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (highlightedIndex >= 0 && options[highlightedIndex]) {
-        selectSet(options[highlightedIndex].dataset.code);
-      }
-    } else if (e.key === 'Escape') {
-      dropdown.classList.add('hidden');
-      input.blur();
-    }
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.autocomplete-wrapper')) {
-      dropdown.classList.add('hidden');
-    }
-  });
-}
-
-function updateHighlight(options) {
-  options.forEach((opt, i) => {
-    opt.classList.toggle('highlighted', i === highlightedIndex);
-  });
-  if (options[highlightedIndex]) {
-    options[highlightedIndex].scrollIntoView({ block: 'nearest' });
-  }
-}
-
-function showDropdown(filter) {
-  const dropdown = document.getElementById('set-dropdown');
-  const filterLower = filter.toLowerCase();
-
-  const filtered = setsData.filter(set =>
-    set.name.toLowerCase().includes(filterLower) ||
-    set.code.toLowerCase().includes(filterLower)
-  ).slice(0, 200); // Limit to 200 results
-
-  if (filtered.length === 0) {
-    dropdown.classList.add('hidden');
-    return;
-  }
-
-  dropdown.innerHTML = filtered.map(set => `
-    <div class="option" data-code="${set.code}">
-      ${set.name.toLowerCase()}<span class="year">(${set.released.slice(0, 4)})</span>
-    </div>
-  `).join('');
-
-  dropdown.querySelectorAll('.option').forEach(opt => {
-    opt.addEventListener('click', () => selectSet(opt.dataset.code));
-  });
-
-  dropdown.classList.remove('hidden');
-}
-
-function selectSet(code) {
-  const set = setsData.find(s => s.code === code);
-  if (!set) return;
-
-  const input = document.getElementById('set-input');
-  const dropdown = document.getElementById('set-dropdown');
-  const hidden = document.getElementById('set-select');
-
-  const displayText = `${set.name.toLowerCase()} (${set.released.slice(0, 4)})`;
-  input.value = displayText;
-  selectedSetDisplay = displayText;
-  hidden.value = code;
-  dropdown.classList.add('hidden');
-  highlightedIndex = -1;
-  input.blur();
-
-  updateBoosterTypeOptions(set.released, code);
-  updateFilterToggles(code, set.released);
-  updateURL(getCurrentState());
-  loadCards();
-}
+let autocomplete = null;
 
 // ============ Toggle Buttons ============
 
@@ -375,16 +209,14 @@ function updateBoosterTypeOptions(releaseDate, setCode, preserveValue = null) {
     boosterToggle.classList.add('single');
     boosterHidden.value = 'play';
   } else if (era === 'set') {
-    boosterToggle.innerHTML = `
-      <button type="button" class="toggle-btn active" data-value="play">draft / set</button>
-      <button type="button" class="toggle-btn" data-value="collector">collector</button>
-    `;
+    boosterToggle.innerHTML =
+      '<button type="button" class="toggle-btn active" data-value="play">draft / set</button>' +
+      '<button type="button" class="toggle-btn" data-value="collector">collector</button>';
     boosterToggle.classList.remove('single');
   } else {
-    boosterToggle.innerHTML = `
-      <button type="button" class="toggle-btn active" data-value="play">play</button>
-      <button type="button" class="toggle-btn" data-value="collector">collector</button>
-    `;
+    boosterToggle.innerHTML =
+      '<button type="button" class="toggle-btn active" data-value="play">play</button>' +
+      '<button type="button" class="toggle-btn" data-value="collector">collector</button>';
     boosterToggle.classList.remove('single');
   }
 
@@ -440,7 +272,7 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   try {
     const cached = await fetchCachedCards(setCode, boosterType);
     if (cached && cached.length > 0) {
-      console.log(`Loaded ${cached.length} cards from cache for ${setCode}`);
+      console.log('Loaded ' + cached.length + ' cards from cache for ' + setCode);
 
       // If includeSpecialGuests, also get cached Special Guests cards
       if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
@@ -450,7 +282,7 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
       return cached;
     }
   } catch (e) {
-    console.log(`Cache miss for ${setCode}, fetching live...`);
+    console.log('Cache miss for ' + setCode + ', fetching live...');
   }
 
   // Fall back to live API
@@ -459,7 +291,7 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
 
 // Fetch from pre-cached JSON files
 async function fetchCachedCards(setCode, boosterType) {
-  const response = await fetch(`./data/${setCode}.json`);
+  const response = await fetch('./data/' + setCode + '.json');
   if (!response.ok) return null;
 
   const data = await response.json();
@@ -498,7 +330,7 @@ async function fetchCachedSpecialGuestsCards(setCode) {
 
   // Try to fetch from spg cache file
   try {
-    const response = await fetch(`./data/spg.json`);
+    const response = await fetch('./data/spg.json');
     if (response.ok) {
       const data = await response.json();
       const allCards = data.collector || data.play || [];
@@ -537,7 +369,7 @@ async function fetchCachedSpecialGuestsCards(setCode) {
   // For OTJ, also fetch The Big Score
   if (SETS_WITH_BIG_SCORE.has(setCode)) {
     try {
-      const response = await fetch(`./data/big.json`);
+      const response = await fetch('./data/big.json');
       if (response.ok) {
         const data = await response.json();
         const bigScoreCards = data.collector || data.play || [];
@@ -569,15 +401,9 @@ async function fetchCachedSpecialGuestsCards(setCode) {
   return cards;
 }
 
-// Promo types that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
-
-// Frame effects that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted'];
-
 // Live fetch from Scryfall API
 async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
-  let query = `set:${setCode} lang:en`;
+  let query = 'set:' + setCode + ' lang:en';
 
   // Jumpstart sets don't use is:booster filter
   if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
@@ -588,7 +414,7 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   // Fetch all cards with any meaningful price (for accurate EV calculation)
   query += ' (usd>=0.5 OR usd_foil>=0.5)';
 
-  const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
+  const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
 
   let cards = [];
   try {
@@ -626,8 +452,8 @@ async function fetchLiveSpecialGuestsCards(setCode) {
   const range = SPECIAL_GUESTS_RANGES[setCode];
   if (range) {
     try {
-      const query = `set:spg cn>=${range[0]} cn<=${range[1]} (usd>=0.5 OR usd_foil>=0.5)`;
-      const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
+      const query = 'set:spg cn>=' + range[0] + ' cn<=' + range[1] + ' (usd>=0.5 OR usd_foil>=0.5)';
+      const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
       const data = await fetchWithRetry(url);
       allCards = allCards.concat(data.data || []);
     } catch (error) {
@@ -638,8 +464,8 @@ async function fetchLiveSpecialGuestsCards(setCode) {
   // For OTJ, also fetch The Big Score cards
   if (SETS_WITH_BIG_SCORE.has(setCode)) {
     try {
-      const query = `set:big (usd>=0.5 OR usd_foil>=0.5)`;
-      const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
+      const query = 'set:big (usd>=0.5 OR usd_foil>=0.5)';
+      const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
       const data = await fetchWithRetry(url);
       allCards = allCards.concat(data.data || []);
     } catch (error) {
@@ -824,7 +650,7 @@ function getTcgPlayerUrl(setName, boosterType) {
   } else {
     searchTerm += ' booster';
   }
-  return `https://www.tcgplayer.com/search/magic/product?productLineName=magic&q=${encodeURIComponent(searchTerm)}&view=grid`;
+  return 'https://www.tcgplayer.com/search/magic/product?productLineName=magic&q=' + encodeURIComponent(searchTerm) + '&view=grid';
 }
 
 function renderCards(cards, rawCards, setInfo, boosterType) {
@@ -837,19 +663,18 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
 
   // Build TCGPlayer link
   const tcgUrl = setInfo ? getTcgPlayerUrl(setInfo.name, boosterType) : null;
-  const tcgLink = tcgUrl ? `<a href="${tcgUrl}" target="_blank" class="tcg-link">buy on tcgplayer</a>` : '';
+  const tcgLink = tcgUrl ? '<a href="' + tcgUrl + '" target="_blank" class="tcg-link">buy on tcgplayer</a>' : '';
 
   if (cards.length === 0) {
-    grid.innerHTML = `
-      <div class="no-results">
-        <h3>no cards found</h3>
-        <p>try lowering the minimum price or switching booster type</p>
-      </div>
-    `;
+    grid.innerHTML =
+      '<div class="no-results">' +
+        '<h3>no cards found</h3>' +
+        '<p>try lowering the minimum price or switching booster type</p>' +
+      '</div>';
     countEl.classList.add('hidden');
     // Still show EV even if no cards match current filters
     if (packEV > 0) {
-      evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span> ${tcgLink}`;
+      evEl.innerHTML = 'pack ev: <span class="ev-value">~$' + packEV.toFixed(2) + '</span> ' + tcgLink;
       evEl.classList.remove('hidden');
     } else {
       evEl.classList.add('hidden');
@@ -857,11 +682,11 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
     return;
   }
 
-  countEl.textContent = `showing ${cards.length} card${cards.length === 1 ? '' : 's'}`;
+  countEl.textContent = 'showing ' + cards.length + ' card' + (cards.length === 1 ? '' : 's');
   countEl.classList.remove('hidden');
 
   // Display pack EV with TCGPlayer link
-  evEl.innerHTML = `pack ev: <span class="ev-value">~$${packEV.toFixed(2)}</span> ${tcgLink}`;
+  evEl.innerHTML = 'pack ev: <span class="ev-value">~$' + packEV.toFixed(2) + '</span> ' + tcgLink;
   evEl.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
@@ -876,26 +701,19 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
 
     // Build price display with treatment inline
     const priceItems = card.finishPrices
-      .map(f => `<span class="finish-price"><span class="finish-type">${f.type}</span> $${f.price.toFixed(2)}</span>`);
+      .map(f => '<span class="finish-price"><span class="finish-type">' + f.type + '</span> $' + f.price.toFixed(2) + '</span>');
 
     const priceDisplay = treatment
-      ? `<span class="card-treatment">${treatment}</span> · ${priceItems.join(' · ')}`
+      ? '<span class="card-treatment">' + treatment + '</span> · ' + priceItems.join(' · ')
       : priceItems.join(' · ');
 
-    return `
-      <div class="card" data-url="${scryfallUrl}">
-        <img
-          class="card-image"
-          src="${imageUrl}"
-          alt="${card.name}"
-          loading="lazy"
-        />
-        <div class="card-info">
-          <div class="card-name" title="${card.name}">${card.name.toLowerCase()}</div>
-          <div class="card-prices">${priceDisplay}</div>
-        </div>
-      </div>
-    `;
+    return '<div class="card" data-url="' + scryfallUrl + '">' +
+      '<img class="card-image" src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" />' +
+      '<div class="card-info">' +
+        '<div class="card-name" title="' + card.name + '">' + card.name.toLowerCase() + '</div>' +
+        '<div class="card-prices">' + priceDisplay + '</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 
   grid.querySelectorAll('.card').forEach(card => {
@@ -942,7 +760,7 @@ async function loadCards() {
   setLoading(true);
 
   const includeList = listMode === 'include';
-  const cacheKey = `${setCode}-${boosterType}-${includeList}`;
+  const cacheKey = setCode + '-' + boosterType + '-' + includeList;
 
   try {
     let allCards;
@@ -975,14 +793,22 @@ function onFilterChange() {
 
 async function init() {
   const setInput = document.getElementById('set-input');
+  const setDropdown = document.getElementById('set-dropdown');
   const setHidden = document.getElementById('set-select');
 
   try {
-    // Load sets
+    // Load sets from shared module
     setsData = await fetchSets();
 
-    // Set up autocomplete and toggles
-    setupAutocomplete();
+    // Set up autocomplete using shared module
+    autocomplete = createSetAutocomplete({
+      inputEl: setInput,
+      dropdownEl: setDropdown,
+      hiddenEl: setHidden,
+      sets: setsData,
+      onSelect: handleSetSelect
+    });
+
     setupToggles();
     setInput.disabled = false;
     setInput.placeholder = 'type to search sets...';
@@ -997,11 +823,8 @@ async function init() {
       if (foundSet) initialSet = foundSet;
     }
 
-    // Set initial values
-    const initialDisplay = `${initialSet.name.toLowerCase()} (${initialSet.released.slice(0, 4)})`;
-    setInput.value = initialDisplay;
-    selectedSetDisplay = initialDisplay;
-    setHidden.value = initialSet.code;
+    // Set initial value using autocomplete
+    autocomplete.setInitialSet(initialSet);
 
     // Set booster type options based on set era, then apply URL value
     updateBoosterTypeOptions(initialSet.released, initialSet.code, urlState.booster);
@@ -1022,6 +845,13 @@ async function init() {
     console.error('Error initializing:', error);
     showError('failed to load sets. please refresh the page.');
   }
+}
+
+function handleSetSelect(set) {
+  updateBoosterTypeOptions(set.released, set.code);
+  updateFilterToggles(set.code, set.released);
+  updateURL(getCurrentState());
+  loadCards();
 }
 
 init();
