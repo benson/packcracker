@@ -16,10 +16,14 @@ const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 
 // Promo types that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_PROMOS = ['fracturefoil', 'texturedfoil', 'ripplefoil', 'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil'];
+const COLLECTOR_EXCLUSIVE_PROMOS = [
+  'fracturefoil', 'texturedfoil', 'ripplefoil',
+  'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil',
+  'raisedfoil', 'headliner'
+];
 
 // Frame effects that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted'];
+const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -103,10 +107,13 @@ function processCard(card) {
     // Treatment detection
     showcase: card.frame_effects?.includes('showcase') || false,
     extendedart: card.frame_effects?.includes('extendedart') || false,
+    inverted: card.frame_effects?.includes('inverted') || false,
     borderless: card.border_color === 'borderless',
     fullart: card.full_art || false,
     etched: card.frame_effects?.includes('etched') || false,
     promo: card.promo || false,
+    // Store promo_types for client-side filtering (important for new sets)
+    promo_types: card.promo_types || [],
   };
 
   // Add available finishes with prices
