@@ -30,5 +30,6 @@ then open [localhost:3000](http://localhost:3000).
 
 ## credits
 
+- code written entirely by [claude code](https://claude.ai/claude-code)
 - card data from [scryfall api](https://scryfall.com/docs/api)
 - prices from [tcgplayer](https://www.tcgplayer.com/) via scryfall
