@@ -439,6 +439,9 @@ footer {
   right: 30px;
   font-size: 0.75rem;
   color: #999;
+  background: rgba(248, 247, 244, 0.85);
+  padding: 6px 10px;
+  border-radius: 4px;
 }
 
 footer a {
