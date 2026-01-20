@@ -394,13 +394,12 @@ select:disabled {
 }
 
 .card-treatment {
-  font-style: italic;
-  color: #888;
+  color: #666;
 }
 
 .card-prices {
   font-size: 0.75rem;
-  color: #000;
+  color: #666;
 }
 
 .finish-price {
@@ -408,9 +407,7 @@ select:disabled {
 }
 
 .finish-type {
-  color: #999;
-  font-size: 0.65rem;
-  margin-right: 1px;
+  color: #666;
 }
 
 .error {
@@ -580,11 +577,4 @@ footer a:hover {
     font-size: 0.5rem;
   }
 
-  .finish-type {
-    font-size: 0.55rem;
-  }
-
-  .cols-4 .finish-type {
-    font-size: 0.45rem;
-  }
 }
