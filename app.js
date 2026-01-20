@@ -12,6 +12,7 @@ import {
   SPECIAL_GUESTS_RANGES,
   SETS_WITH_BIG_SCORE,
   SETS_WITH_SPECIAL_GUESTS,
+  BONUS_SHEET_SETS,
   COLLECTOR_EXCLUSIVE_PROMOS,
   COLLECTOR_EXCLUSIVE_FRAMES
 } from 'https://bensonperry.com/shared/mtg.js';
@@ -451,6 +452,12 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
     cards = cards.concat(specialGuestsCards);
   }
 
+  // Fetch bonus sheet cards (like Avatar source material cards)
+  if (BONUS_SHEET_SETS[setCode]) {
+    const bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
+    cards = cards.concat(bonusCards);
+  }
+
   return cards;
 }
 
@@ -484,6 +491,32 @@ async function fetchLiveSpecialGuestsCards(setCode) {
   }
 
   return allCards;
+}
+
+// Fetch bonus sheet cards (e.g., Avatar source material cards from TLE)
+async function fetchBonusSheetCards(bonusSetCode, boosterType) {
+  try {
+    let query = 'set:' + bonusSetCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
+    const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
+    const data = await fetchWithRetry(url);
+    let cards = data.data || [];
+
+    // Filter out collector exclusives for play boosters
+    if (boosterType !== 'collector') {
+      cards = cards.filter(card => {
+        const promos = card.promo_types || [];
+        const frames = card.frame_effects || [];
+        const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
+        const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
+        return !hasExclusivePromo && !hasExclusiveFrame;
+      });
+    }
+
+    return cards;
+  } catch (error) {
+    // Ignore 404s
+    return [];
+  }
 }
 
 function getCardTreatment(card, isFoil) {
