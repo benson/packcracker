@@ -309,8 +309,12 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   }
 
   // Filter out collector exclusives for play boosters (unified filter for cache + live)
+  // Skip bonus sheet cards - they have their own styling that isn't collector-exclusive
   if (boosterType !== 'collector') {
     cards = cards.filter(card => {
+      // Bonus sheet cards already filtered by is:booster, don't apply frame filter
+      if (card._fromBonusSheet) return true;
+
       const promos = card.promo_types || [];
       const frames = card.frame_effects || [];
       const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
@@ -513,23 +517,23 @@ async function fetchLiveSpecialGuestsCards(setCode) {
 }
 
 // Fetch bonus sheet cards (e.g., Avatar source material cards from TLE)
+// Bonus sheet cards use their own styling (like inverted frames) that isn't collector-exclusive
+// for that set, so we don't filter them - we trust Scryfall's booster flag
 async function fetchBonusSheetCards(bonusSetCode, boosterType) {
   try {
     let query = 'set:' + bonusSetCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
+
+    // For play boosters, only get cards that appear in boosters
+    if (boosterType !== 'collector') {
+      query += ' is:booster';
+    }
+
     const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
     const data = await fetchWithRetry(url);
     let cards = data.data || [];
 
-    // Filter out collector exclusives for play boosters
-    if (boosterType !== 'collector') {
-      cards = cards.filter(card => {
-        const promos = card.promo_types || [];
-        const frames = card.frame_effects || [];
-        const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
-        const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
-        return !hasExclusivePromo && !hasExclusiveFrame;
-      });
-    }
+    // Mark these as bonus sheet cards so they skip the unified filter
+    cards = cards.map(card => ({ ...card, _fromBonusSheet: true }));
 
     return cards;
   } catch (error) {
