@@ -516,17 +516,15 @@ async function fetchLiveSpecialGuestsCards(setCode) {
   return allCards;
 }
 
-// Fetch bonus sheet cards (e.g., Avatar source material cards from TLE)
-// Bonus sheet cards use their own styling (like inverted frames) that isn't collector-exclusive
-// for that set, so we don't filter them - we trust Scryfall's booster flag
+// Fetch bonus sheet cards (e.g., source material cards from TLE, MAR)
+// These are manually curated via BONUS_SHEET_SETS - we know they appear in play boosters
+// per WotC product info, even if Scryfall's booster flag is unreliable for these sets.
+// We also skip the collector-exclusive filter since these sets use their own styling.
 async function fetchBonusSheetCards(bonusSetCode, boosterType) {
   try {
-    let query = 'set:' + bonusSetCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
-
-    // For play boosters, only get cards that appear in boosters
-    if (boosterType !== 'collector') {
-      query += ' is:booster';
-    }
+    // Don't use is:booster filter - Scryfall's booster flag is unreliable for bonus sheets
+    // (e.g., MAR cards have booster:false but DO appear in Spider-Man Play Boosters)
+    const query = 'set:' + bonusSetCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
 
     const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
     const data = await fetchWithRetry(url);
