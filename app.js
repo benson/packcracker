@@ -941,10 +941,10 @@ function applyTheme(theme) {
   const toggle = document.getElementById('theme-toggle');
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    toggle.textContent = 'light';
+    toggle.innerHTML = '<span class="theme-icon">☀</span> light';
   } else {
     document.documentElement.removeAttribute('data-theme');
-    toggle.textContent = 'dark';
+    toggle.innerHTML = '<span class="theme-icon">☽</span> dark';
   }
 }
 
