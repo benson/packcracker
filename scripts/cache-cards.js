@@ -15,15 +15,29 @@ const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 // Jumpstart sets have their own booster type (no play/collector distinction)
 const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 
-// Promo types that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_PROMOS = [
-  'fracturefoil', 'texturedfoil', 'ripplefoil',
-  'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil',
-  'raisedfoil', 'headliner'
-];
+// Collector exclusives - fetched from shared config at runtime
+// Source of truth: https://bensonperry.com/shared/collector-exclusives.json
+let COLLECTOR_EXCLUSIVE_PROMOS = [];
+let COLLECTOR_EXCLUSIVE_FRAMES = [];
 
-// Frame effects that are collector booster exclusives
-const COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
+async function loadCollectorExclusives() {
+  try {
+    const response = await fetch('https://bensonperry.com/shared/collector-exclusives.json');
+    const data = await response.json();
+    COLLECTOR_EXCLUSIVE_PROMOS = data.promos;
+    COLLECTOR_EXCLUSIVE_FRAMES = data.frames;
+    console.log('Loaded collector exclusives from shared config');
+  } catch (error) {
+    // Fallback to hardcoded values if fetch fails
+    console.warn('Failed to fetch collector exclusives, using fallback values');
+    COLLECTOR_EXCLUSIVE_PROMOS = [
+      'fracturefoil', 'texturedfoil', 'ripplefoil',
+      'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil',
+      'raisedfoil', 'headliner'
+    ];
+    COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
+  }
+}
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -181,6 +195,9 @@ async function cacheSet(set) {
 }
 
 async function main() {
+  // Load shared collector exclusive config
+  await loadCollectorExclusives();
+
   const setsPath = path.join(__dirname, '..', 'sets.json');
   const dataDir = path.join(__dirname, '..', 'data');
 

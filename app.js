@@ -4,6 +4,7 @@ import {
   createSetAutocomplete,
   delay,
   fetchWithRetry,
+  isCollectorExclusive,
   COLLECTOR_BOOSTER_START,
   PLAY_BOOSTER_START,
   FOIL_START,
@@ -13,11 +14,20 @@ import {
   SETS_WITH_BIG_SCORE,
   SETS_WITH_SPECIAL_GUESTS,
   BONUS_SHEET_SETS,
-  COLLECTOR_EXCLUSIVE_PROMOS,
-  COLLECTOR_EXCLUSIVE_FRAMES
 } from 'https://bensonperry.com/shared/mtg.js';
 
+// Sets where retro frame cards appear in Play Boosters (not collector-exclusive)
+// TODO: Import from mtg.js once deployed
+const SETS_WITH_RETRO_IN_BOOSTERS = new Set(['mh3']);
+
 const SCRYFALL_API = 'https://api.scryfall.com';
+
+// Play Booster pull rates for EV calculation
+// Source: https://magic.wizards.com/en/news/feature/play-booster-contents
+const RARE_RATE = 0.875;       // ~87.5% chance of rare in rare/mythic slot
+const MYTHIC_RATE = 0.125;     // ~12.5% chance of mythic (roughly 7:1 ratio)
+const FOIL_RARE_RATE = 0.10;   // ~10% chance of foil rare across pack
+const FOIL_MYTHIC_RATE = 0.02; // ~2% chance of foil mythic across pack
 
 // ============ URL State Management ============
 
@@ -67,82 +77,36 @@ let autocomplete = null;
 
 // ============ Toggle Buttons ============
 
+// Helper to set up a toggle button group
+function setupToggle(toggleId, hiddenId, onChange, options = {}) {
+  const toggle = document.getElementById(toggleId);
+  const hidden = document.getElementById(hiddenId);
+  const { disableWhenSingle = false } = options;
+
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    if (disableWhenSingle && toggle.classList.contains('single')) return;
+
+    toggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    hidden.value = btn.dataset.value;
+    onChange();
+  });
+}
+
 function setupToggles() {
-  // Booster type toggle
-  const boosterToggle = document.getElementById('booster-toggle');
-  const boosterHidden = document.getElementById('booster-type');
+  // Filter toggles
+  setupToggle('booster-toggle', 'booster-type', onFilterChange, { disableWhenSingle: true });
+  setupToggle('price-toggle', 'min-price', onFilterChange);
+  setupToggle('foils-toggle', 'foils-mode', onFilterChange);
+  setupToggle('rares-toggle', 'rares-mode', onFilterChange);
+  setupToggle('list-toggle', 'list-mode', onFilterChange);
 
-  boosterToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn || boosterToggle.classList.contains('single')) return;
-
-    boosterToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    boosterHidden.value = btn.dataset.value;
-    onFilterChange();
-  });
-
-  // Price toggle
-  const priceToggle = document.getElementById('price-toggle');
-  const priceHidden = document.getElementById('min-price');
-
-  priceToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-
-    priceToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    priceHidden.value = btn.dataset.value;
-    onFilterChange();
-  });
-
-  // Foils toggle
-  const foilsToggle = document.getElementById('foils-toggle');
-  const foilsHidden = document.getElementById('foils-mode');
-
-  foilsToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-
-    foilsToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    foilsHidden.value = btn.dataset.value;
-    onFilterChange();
-  });
-
-  // Rares toggle
-  const raresToggle = document.getElementById('rares-toggle');
-  const raresHidden = document.getElementById('rares-mode');
-
-  raresToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-
-    raresToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    raresHidden.value = btn.dataset.value;
-    onFilterChange();
-  });
-
-  // List toggle
-  const listToggle = document.getElementById('list-toggle');
-  const listHidden = document.getElementById('list-mode');
-
-  listToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-
-    listToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    listHidden.value = btn.dataset.value;
-    onFilterChange();
-  });
-
-  // Grid columns toggle (mobile only)
+  // Grid columns toggle (mobile only) - separate logic for localStorage
   const gridToggle = document.getElementById('grid-toggle');
   const cardGrid = document.getElementById('card-grid');
 
-  // Restore from localStorage
   const savedCols = localStorage.getItem('gridCols') || '2';
   setGridCols(savedCols);
 
@@ -162,7 +126,6 @@ function setupToggles() {
     if (cols === '1') cardGrid.classList.add('cols-1');
     if (cols === '3') cardGrid.classList.add('cols-3');
     if (cols === '4') cardGrid.classList.add('cols-4');
-    // Update active button
     gridToggle.querySelectorAll('.grid-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.cols === cols);
     });
@@ -308,38 +271,34 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
     cards = [...cards, ...bonusCards];
   }
 
+  // Fetch retro frame cards for sets where they appear in Play Boosters
+  if (SETS_WITH_RETRO_IN_BOOSTERS.has(setCode)) {
+    const retroCards = await fetchRetroFrameCards(setCode);
+    cards = [...cards, ...retroCards];
+  }
+
   // Filter out collector exclusives for play boosters (unified filter for cache + live)
-  // Skip bonus sheet cards - they have their own styling that isn't collector-exclusive
+  // Skip bonus sheets, Special Guests, Big Score, and retro cards - they appear in play boosters
   if (boosterType !== 'collector') {
     cards = cards.filter(card => {
-      // Bonus sheet cards already filtered by is:booster, don't apply frame filter
       if (card._fromBonusSheet) return true;
-
-      const promos = card.promo_types || [];
-      const frames = card.frame_effects || [];
-      const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
-      const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
-      return !hasExclusivePromo && !hasExclusiveFrame;
+      if (card._fromRetroSheet) return true;
+      if (card.set === 'spg' || card.set === 'big') return true;
+      return !isCollectorExclusive(card);
     });
   }
 
   return cards;
 }
 
-// Fetch from pre-cached JSON files
-async function fetchCachedCards(setCode, boosterType) {
-  const response = await fetch('./data/' + setCode + '.json');
-  if (!response.ok) return null;
-
-  const data = await response.json();
-  const cards = boosterType === 'collector' ? data.collector : data.play;
-
-  // Convert cached format back to Scryfall-like format for compatibility
-  return cards.map(card => ({
+// Convert cached card format back to Scryfall-like format
+function convertCachedCard(card) {
+  return {
     id: card.id,
     name: card.name,
     set: card.set,
     rarity: card.rarity,
+    collector_number: card.collector_number,
     booster: card.booster,
     image_uris: { normal: card.image },
     scryfall_uri: card.uri,
@@ -357,9 +316,20 @@ async function fetchCachedCards(setCode, boosterType) {
     ].filter(Boolean),
     promo_types: card.promo_types || [],
     border_color: card.borderless ? 'borderless' : 'black',
-    full_art: card.fullart,
-    promo: card.promo,
-  }));
+    full_art: card.fullart || false,
+    promo: card.promo || false,
+  };
+}
+
+// Fetch from pre-cached JSON files
+async function fetchCachedCards(setCode, boosterType) {
+  const response = await fetch('./data/' + setCode + '.json');
+  if (!response.ok) return null;
+
+  const data = await response.json();
+  const cards = boosterType === 'collector' ? data.collector : data.play;
+
+  return cards.map(convertCachedCard);
 }
 
 // Fetch cached Special Guests cards for a specific set
@@ -380,26 +350,7 @@ async function fetchCachedSpecialGuestsCards(setCode) {
         return cn >= range[0] && cn <= range[1];
       });
 
-      cards.push(...filtered.map(card => ({
-        id: card.id,
-        name: card.name,
-        set: card.set,
-        rarity: card.rarity,
-        collector_number: card.collector_number,
-        booster: card.booster,
-        image_uris: { normal: card.image },
-        scryfall_uri: card.uri,
-        finishes: card.finishes.map(f => f.type),
-        prices: {
-          usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
-          usd_foil: card.finishes.find(f => f.type === 'foil')?.price?.toString() || null,
-          usd_etched: card.finishes.find(f => f.type === 'etched')?.price?.toString() || null,
-        },
-        frame_effects: [],
-        border_color: 'black',
-        full_art: false,
-        promo: false,
-      })));
+      cards.push(...filtered.map(convertCachedCard));
     }
   } catch (e) {
     // Ignore missing cache files
@@ -412,25 +363,7 @@ async function fetchCachedSpecialGuestsCards(setCode) {
       if (response.ok) {
         const data = await response.json();
         const bigScoreCards = data.collector || data.play || [];
-        cards.push(...bigScoreCards.map(card => ({
-          id: card.id,
-          name: card.name,
-          set: card.set,
-          rarity: card.rarity,
-          booster: card.booster,
-          image_uris: { normal: card.image },
-          scryfall_uri: card.uri,
-          finishes: card.finishes.map(f => f.type),
-          prices: {
-            usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
-            usd_foil: card.finishes.find(f => f.type === 'foil')?.price?.toString() || null,
-            usd_etched: card.finishes.find(f => f.type === 'etched')?.price?.toString() || null,
-          },
-          frame_effects: [],
-          border_color: 'black',
-          full_art: false,
-          promo: false,
-        })));
+        cards.push(...bigScoreCards.map(convertCachedCard));
       }
     } catch (e) {
       // Ignore missing cache files
@@ -467,13 +400,7 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   // Client-side filter: remove collector-exclusive cards for play boosters
   // This is needed because Scryfall's filters don't work reliably for new sets
   if (boosterType !== 'collector') {
-    cards = cards.filter(card => {
-      const promos = card.promo_types || [];
-      const frames = card.frame_effects || [];
-      const hasExclusivePromo = promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
-      const hasExclusiveFrame = frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
-      return !hasExclusivePromo && !hasExclusiveFrame;
-    });
+    cards = cards.filter(card => !isCollectorExclusive(card));
   }
 
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
@@ -514,6 +441,22 @@ async function fetchLiveSpecialGuestsCards(setCode) {
   }
 
   return allCards;
+}
+
+// Fetch retro frame and full art cards for sets where they appear in Play Boosters
+// Scryfall marks these as booster:false but they DO appear in play boosters
+async function fetchRetroFrameCards(setCode) {
+  try {
+    const query = 'set:' + setCode + ' (frame:old OR is:full) lang:en (usd>=0.5 OR usd_foil>=0.5)';
+    const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
+    const data = await fetchWithRetry(url);
+    let cards = data.data || [];
+    // Mark as retro so they skip collector-exclusive filter
+    cards = cards.map(card => ({ ...card, _fromRetroSheet: true }));
+    return cards;
+  } catch (error) {
+    return [];
+  }
 }
 
 // Fetch bonus sheet cards (e.g., source material cards from TLE, MAR)
@@ -558,6 +501,13 @@ function getCardTreatment(card, isFoil) {
   return treatments.length > 0 ? treatments.join(', ') : 'Regular';
 }
 
+// Finish type configuration for expansion
+const FINISH_TYPES = [
+  { key: 'nonfoil', priceKey: 'usd', isFoil: false },
+  { key: 'foil', priceKey: 'usd_foil', isFoil: true },
+  { key: 'etched', priceKey: 'usd_etched', isFoil: false, transformTreatment: t => t.replace('Regular', 'Etched') || 'Etched' },
+];
+
 function expandCardFinishes(cards) {
   const expanded = [];
 
@@ -565,42 +515,14 @@ function expandCardFinishes(cards) {
     const prices = card.prices || {};
     const finishes = card.finishes || [];
 
-    if (finishes.includes('nonfoil') && prices.usd) {
-      const price = parseFloat(prices.usd);
-      if (price > 0) {
-        expanded.push({
-          ...card,
-          price,
-          isFoil: false,
-          treatment: getCardTreatment(card, false),
-          finishKey: 'nonfoil'
-        });
-      }
-    }
-
-    if (finishes.includes('foil') && prices.usd_foil) {
-      const price = parseFloat(prices.usd_foil);
-      if (price > 0) {
-        expanded.push({
-          ...card,
-          price,
-          isFoil: true,
-          treatment: getCardTreatment(card, true),
-          finishKey: 'foil'
-        });
-      }
-    }
-
-    if (finishes.includes('etched') && prices.usd_etched) {
-      const price = parseFloat(prices.usd_etched);
-      if (price > 0) {
-        expanded.push({
-          ...card,
-          price,
-          isFoil: false,
-          treatment: getCardTreatment(card, false).replace('Regular', 'Etched') || 'Etched',
-          finishKey: 'etched'
-        });
+    for (const finish of FINISH_TYPES) {
+      if (finishes.includes(finish.key) && prices[finish.priceKey]) {
+        const price = parseFloat(prices[finish.priceKey]);
+        if (price > 0) {
+          let treatment = getCardTreatment(card, finish.isFoil);
+          if (finish.transformTreatment) treatment = finish.transformTreatment(treatment);
+          expanded.push({ ...card, price, isFoil: finish.isFoil, treatment, finishKey: finish.key });
+        }
       }
     }
   }
@@ -671,34 +593,25 @@ function calculatePackEV(cards) {
   // Count unique cards per rarity (for probability calculation)
   const uniqueRares = new Set(nonFoilRares.map(c => c.id)).size || 1;
   const uniqueMythics = new Set(nonFoilMythics.map(c => c.id)).size || 1;
-
-  // Play Booster rare/mythic slot: ~87.5% rare, ~12.5% mythic (roughly 7:1)
-  const RARE_RATE = 0.875;
-  const MYTHIC_RATE = 0.125;
+  const uniqueFoilRares = new Set(foilRares.map(c => c.id)).size || 1;
+  const uniqueFoilMythics = new Set(foilMythics.map(c => c.id)).size || 1;
 
   // Calculate EV for rare/mythic slot (non-foil)
   let ev = 0;
 
-  // Each rare has equal probability: RARE_RATE / uniqueRares
   for (const card of nonFoilRares) {
     ev += card.price * (RARE_RATE / uniqueRares);
   }
-
-  // Each mythic has equal probability: MYTHIC_RATE / uniqueMythics
   for (const card of nonFoilMythics) {
     ev += card.price * (MYTHIC_RATE / uniqueMythics);
   }
 
-  // Foil slot contribution (roughly 1 in 6 packs has a rare/mythic foil)
-  // Simplified: ~10% chance of rare foil, ~2% chance of mythic foil
-  const uniqueFoilRares = new Set(foilRares.map(c => c.id)).size || 1;
-  const uniqueFoilMythics = new Set(foilMythics.map(c => c.id)).size || 1;
-
+  // Foil slot contribution
   for (const card of foilRares) {
-    ev += card.price * (0.10 / uniqueFoilRares);
+    ev += card.price * (FOIL_RARE_RATE / uniqueFoilRares);
   }
   for (const card of foilMythics) {
-    ev += card.price * (0.02 / uniqueFoilMythics);
+    ev += card.price * (FOIL_MYTHIC_RATE / uniqueFoilMythics);
   }
 
   return ev;
