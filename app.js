@@ -277,10 +277,12 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
     cards = [...cards, ...retroCards];
   }
 
-  // Filter out collector exclusives for play boosters (unified filter for cache + live)
+  // Filter out collector exclusives for play boosters (for live-fetched cards only)
+  // Cached cards are already filtered correctly by the cache script using set-configs
   // Skip bonus sheets, Special Guests, Big Score, and retro cards - they appear in play boosters
   if (boosterType !== 'collector') {
     cards = cards.filter(card => {
+      if (card._fromCache) return true; // Already filtered by cache script
       if (card._fromBonusSheet) return true;
       if (card._fromRetroSheet) return true;
       if (card.set === 'spg' || card.set === 'big') return true;
@@ -302,6 +304,7 @@ function convertCachedCard(card) {
     booster: card.booster,
     image_uris: { normal: card.image },
     scryfall_uri: card.uri,
+    _fromCache: true, // Mark as cached - already filtered correctly by cache script
     finishes: card.finishes.map(f => f.type),
     prices: {
       usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
