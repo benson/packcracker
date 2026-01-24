@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SCRYFALL_API = 'https://api.scryfall.com';
+const SET_CONFIGS_URL = 'https://bensonperry.com/shared/set-configs.json';
 const MIN_PRICE = 1; // Cache cards worth $1+
 const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 
@@ -19,6 +20,9 @@ const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 // Source of truth: https://bensonperry.com/shared/collector-exclusives.json
 let COLLECTOR_EXCLUSIVE_PROMOS = [];
 let COLLECTOR_EXCLUSIVE_FRAMES = [];
+
+// Set configs loaded from shared config (per-set CN ranges)
+let setConfigs = {};
 
 async function loadCollectorExclusives() {
   try {
@@ -37,6 +41,65 @@ async function loadCollectorExclusives() {
     ];
     COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
   }
+}
+
+// Load set configs for accurate play booster filtering
+async function loadSetConfigs() {
+  // Try local file first (for development), then remote
+  const localPath = path.join(__dirname, '..', '..', 'homepage', 'shared', 'set-configs.json');
+  try {
+    if (fs.existsSync(localPath)) {
+      setConfigs = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      console.log(`Loaded set configs from local file for ${Object.keys(setConfigs).filter(k => k !== '_comment').length} sets`);
+      return;
+    }
+  } catch (e) {
+    // Fall through to remote
+  }
+
+  try {
+    const response = await fetch(SET_CONFIGS_URL);
+    setConfigs = await response.json();
+    console.log(`Loaded set configs from remote for ${Object.keys(setConfigs).filter(k => k !== '_comment').length} sets`);
+  } catch (e) {
+    console.log('Warning: Could not load set configs, using default rules');
+    setConfigs = {};
+  }
+}
+
+// Check if collector number is in a range like "262-281" or "342"
+function isInRange(cn, rangeStr) {
+  const cnNum = parseInt(cn, 10);
+  if (isNaN(cnNum)) return false;
+  if (rangeStr.includes('-')) {
+    const [start, end] = rangeStr.split('-').map(n => parseInt(n, 10));
+    return cnNum >= start && cnNum <= end;
+  }
+  return cnNum === parseInt(rangeStr, 10);
+}
+
+// Check if card is in play booster based on set config
+function isInPlayBoosterByConfig(card, setCode) {
+  const config = setConfigs[setCode];
+  if (!config?.playBooster?.includeCollectorNumbers) return null;
+  const cn = card.collector_number;
+  return config.playBooster.includeCollectorNumbers.some(range => isInRange(cn, range));
+}
+
+// Check if card is collector-exclusive based on set config
+function isCollectorExclusiveByConfig(card, setCode) {
+  const config = setConfigs[setCode];
+  if (!config?.collectorExclusive?.collectorNumbers) return null;
+  const cn = card.collector_number;
+  return config.collectorExclusive.collectorNumbers.some(range => isInRange(cn, range));
+}
+
+// Check if card is collector-exclusive using generic rules
+function isCollectorExclusive(card) {
+  const promos = card.promo_types || [];
+  const frames = card.frame_effects || [];
+  return promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p)) ||
+         frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
 }
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -62,13 +125,13 @@ async function fetchWithRetry(url, retries = 3) {
 }
 
 async function fetchSetCards(setCode, boosterType) {
+  const hasSetConfig = setConfigs[setCode]?.playBooster?.includeCollectorNumbers;
+
   let query = `set:${setCode} lang:en`;
 
-  // Jumpstart sets don't use is:booster filter
-  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
-    // Exclude boosterfun variants (showcase, extended art, etc.) from Play Booster results
-    // These are Collector Booster exclusives
-    // Also exclude collector-exclusive promo types for new sets where is:boosterfun isn't populated
+  // If we have a set config, fetch all cards and filter client-side
+  // Otherwise use Scryfall's is:booster filter
+  if (!hasSetConfig && boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
     query += ' is:booster -is:boosterfun';
     COLLECTOR_EXCLUSIVE_PROMOS.forEach(promo => {
       query += ` -promo:${promo}`;
@@ -98,6 +161,17 @@ async function fetchSetCards(setCode, boosterType) {
       return []; // No cards match - that's fine
     }
     throw error;
+  }
+
+  // If we have a set config, filter for play boosters client-side
+  if (hasSetConfig && boosterType !== 'collector') {
+    allCards = allCards.filter(card => {
+      const inPlayBooster = isInPlayBoosterByConfig(card, setCode);
+      if (inPlayBooster === true) return true;
+      if (isCollectorExclusiveByConfig(card, setCode) === true) return false;
+      // Fall back to Scryfall booster flag and generic rules
+      return card.booster && !isCollectorExclusive(card);
+    });
   }
 
   return allCards;
@@ -195,8 +269,9 @@ async function cacheSet(set) {
 }
 
 async function main() {
-  // Load shared collector exclusive config
+  // Load shared configs
   await loadCollectorExclusives();
+  await loadSetConfigs();
 
   const setsPath = path.join(__dirname, '..', 'sets.json');
   const dataDir = path.join(__dirname, '..', 'data');
