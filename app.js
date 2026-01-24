@@ -4,7 +4,6 @@ import {
   createSetAutocomplete,
   delay,
   fetchWithRetry,
-  isCollectorExclusive,
   COLLECTOR_BOOSTER_START,
   PLAY_BOOSTER_START,
   FOIL_START,
@@ -277,19 +276,6 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
     cards = [...cards, ...retroCards];
   }
 
-  // Filter out collector exclusives for play boosters (for live-fetched cards only)
-  // Cached cards are already filtered correctly by the cache script using set-configs
-  // Skip bonus sheets, Special Guests, Big Score, and retro cards - they appear in play boosters
-  if (boosterType !== 'collector') {
-    cards = cards.filter(card => {
-      if (card._fromCache) return true; // Already filtered by cache script
-      if (card._fromBonusSheet) return true;
-      if (card._fromRetroSheet) return true;
-      if (card.set === 'spg' || card.set === 'big') return true;
-      return !isCollectorExclusive(card);
-    });
-  }
-
   return cards;
 }
 
@@ -304,7 +290,6 @@ function convertCachedCard(card) {
     booster: card.booster,
     image_uris: { normal: card.image },
     scryfall_uri: card.uri,
-    _fromCache: true, // Mark as cached - already filtered correctly by cache script
     finishes: card.finishes.map(f => f.type),
     prices: {
       usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
@@ -398,12 +383,6 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
     cards = data.data;
   } catch (error) {
     if (error.message !== 'HTTP 404') throw error;
-  }
-
-  // Client-side filter: remove collector-exclusive cards for play boosters
-  // This is needed because Scryfall's filters don't work reliably for new sets
-  if (boosterType !== 'collector') {
-    cards = cards.filter(card => !isCollectorExclusive(card));
   }
 
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
