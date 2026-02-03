@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SCRYFALL_API = 'https://api.scryfall.com';
-const SET_CONFIGS_URL = 'https://bensonperry.com/shared/set-configs.json';
+const BOOSTER_DATA_URL = 'https://bensonperry.com/booster-data';
 const MIN_PRICE = 1; // Cache cards worth $1+
 const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
 
@@ -21,8 +21,9 @@ const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
 let COLLECTOR_EXCLUSIVE_PROMOS = [];
 let COLLECTOR_EXCLUSIVE_FRAMES = [];
 
-// Set configs loaded from shared config (per-set CN ranges)
-let setConfigs = {};
+// Booster data loaded from booster-data project
+let boosterIndex = {};
+let boosterFileCache = {};
 
 async function loadCollectorExclusives() {
   try {
@@ -43,14 +44,14 @@ async function loadCollectorExclusives() {
   }
 }
 
-// Load set configs for accurate play booster filtering
-async function loadSetConfigs() {
+// Load booster data index
+async function loadBoosterIndex() {
   // Try local file first (for development), then remote
-  const localPath = path.join(__dirname, '..', '..', 'homepage', 'shared', 'set-configs.json');
+  const localPath = path.join(__dirname, '..', '..', 'booster-data', 'index.json');
   try {
     if (fs.existsSync(localPath)) {
-      setConfigs = JSON.parse(fs.readFileSync(localPath, 'utf8'));
-      console.log(`Loaded set configs from local file for ${Object.keys(setConfigs).filter(k => k !== '_comment').length} sets`);
+      boosterIndex = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      console.log(`Loaded booster index from local file for ${Object.keys(boosterIndex.boosters || {}).length} sets`);
       return;
     }
   } catch (e) {
@@ -58,13 +59,63 @@ async function loadSetConfigs() {
   }
 
   try {
-    const response = await fetch(SET_CONFIGS_URL);
-    setConfigs = await response.json();
-    console.log(`Loaded set configs from remote for ${Object.keys(setConfigs).filter(k => k !== '_comment').length} sets`);
+    const response = await fetch(BOOSTER_DATA_URL + '/index.json');
+    boosterIndex = await response.json();
+    console.log(`Loaded booster index from remote for ${Object.keys(boosterIndex.boosters || {}).length} sets`);
   } catch (e) {
-    console.log('Warning: Could not load set configs, using default rules');
-    setConfigs = {};
+    console.log('Warning: Could not load booster index, using default rules');
+    boosterIndex = { boosters: {} };
   }
+}
+
+// Load a specific booster file
+async function loadBoosterFile(setCode, boosterType) {
+  const key = `${setCode}-${boosterType}`;
+  if (boosterFileCache[key]) return boosterFileCache[key];
+
+  // Try local file first
+  const localPath = path.join(__dirname, '..', '..', 'booster-data', 'boosters', `${key}.json`);
+  try {
+    if (fs.existsSync(localPath)) {
+      boosterFileCache[key] = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      return boosterFileCache[key];
+    }
+  } catch (e) {
+    // Fall through to remote
+  }
+
+  try {
+    const response = await fetch(`${BOOSTER_DATA_URL}/boosters/${key}.json`);
+    boosterFileCache[key] = await response.json();
+  } catch (e) {
+    boosterFileCache[key] = null;
+  }
+  return boosterFileCache[key];
+}
+
+// Get CN ranges from booster file for play boosters
+function getPlayBoosterRanges(boosterFile) {
+  if (!boosterFile?.slots) return null;
+  const ranges = [];
+  for (const slot of boosterFile.slots) {
+    if (slot.pool?.nonfoil) ranges.push(...slot.pool.nonfoil);
+    if (slot.pool?.foil) ranges.push(...slot.pool.foil);
+  }
+  return [...new Set(ranges)];
+}
+
+// Get CN ranges from booster file for collector exclusives
+function getCollectorExclusiveRanges(boosterFile) {
+  if (!boosterFile?.slots) return null;
+  const ranges = [];
+  for (const slot of boosterFile.slots) {
+    if (slot.name === 'collectorExclusive' && slot.pool) {
+      for (const finishRanges of Object.values(slot.pool)) {
+        ranges.push(...finishRanges);
+      }
+    }
+  }
+  return ranges.length > 0 ? [...new Set(ranges)] : null;
 }
 
 // Check if collector number is in a range like "262-281" or "342"
@@ -78,20 +129,33 @@ function isInRange(cn, rangeStr) {
   return cnNum === parseInt(rangeStr, 10);
 }
 
-// Check if card is in play booster based on set config
-function isInPlayBoosterByConfig(card, setCode) {
-  const config = setConfigs[setCode];
-  if (!config?.playBooster?.includeCollectorNumbers) return null;
+// Check if card is in play booster based on booster data
+async function isInPlayBoosterByConfig(card, setCode) {
+  const types = boosterIndex.boosters?.[setCode];
+  if (!types) return null;
+
+  const playType = types.includes('play') ? 'play' : types.includes('draft') ? 'draft' : null;
+  if (!playType) return null;
+
+  const boosterFile = await loadBoosterFile(setCode, playType);
+  const ranges = getPlayBoosterRanges(boosterFile);
+  if (!ranges) return null;
+
   const cn = card.collector_number;
-  return config.playBooster.includeCollectorNumbers.some(range => isInRange(cn, range));
+  return ranges.some(range => isInRange(cn, range));
 }
 
-// Check if card is collector-exclusive based on set config
-function isCollectorExclusiveByConfig(card, setCode) {
-  const config = setConfigs[setCode];
-  if (!config?.collectorExclusive?.collectorNumbers) return null;
+// Check if card is collector-exclusive based on booster data
+async function isCollectorExclusiveByConfig(card, setCode) {
+  const types = boosterIndex.boosters?.[setCode];
+  if (!types || !types.includes('collector')) return null;
+
+  const boosterFile = await loadBoosterFile(setCode, 'collector');
+  const ranges = getCollectorExclusiveRanges(boosterFile);
+  if (!ranges) return null;
+
   const cn = card.collector_number;
-  return config.collectorExclusive.collectorNumbers.some(range => isInRange(cn, range));
+  return ranges.some(range => isInRange(cn, range));
 }
 
 // Check if card is collector-exclusive using generic rules
@@ -125,13 +189,13 @@ async function fetchWithRetry(url, retries = 3) {
 }
 
 async function fetchSetCards(setCode, boosterType) {
-  const hasSetConfig = setConfigs[setCode]?.playBooster?.includeCollectorNumbers;
+  const hasBoosterData = boosterIndex.boosters?.[setCode];
 
   let query = `set:${setCode} lang:en`;
 
-  // If we have a set config, fetch all cards and filter client-side
+  // If we have booster data, fetch all cards and filter client-side
   // Otherwise use Scryfall's is:booster filter
-  if (!hasSetConfig && boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
+  if (!hasBoosterData && boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
     query += ' is:booster -is:boosterfun';
     COLLECTOR_EXCLUSIVE_PROMOS.forEach(promo => {
       query += ` -promo:${promo}`;
@@ -163,15 +227,23 @@ async function fetchSetCards(setCode, boosterType) {
     throw error;
   }
 
-  // If we have a set config, filter for play boosters client-side
-  if (hasSetConfig && boosterType !== 'collector') {
-    allCards = allCards.filter(card => {
-      const inPlayBooster = isInPlayBoosterByConfig(card, setCode);
-      if (inPlayBooster === true) return true;
-      if (isCollectorExclusiveByConfig(card, setCode) === true) return false;
+  // If we have booster data, filter for play boosters client-side
+  if (hasBoosterData && boosterType !== 'collector') {
+    const filteredCards = [];
+    for (const card of allCards) {
+      const inPlayBooster = await isInPlayBoosterByConfig(card, setCode);
+      if (inPlayBooster === true) {
+        filteredCards.push(card);
+        continue;
+      }
+      const inCollectorExclusive = await isCollectorExclusiveByConfig(card, setCode);
+      if (inCollectorExclusive === true) continue;
       // Fall back to Scryfall booster flag and generic rules
-      return card.booster && !isCollectorExclusive(card);
-    });
+      if (card.booster && !isCollectorExclusive(card)) {
+        filteredCards.push(card);
+      }
+    }
+    return filteredCards;
   }
 
   return allCards;
@@ -271,7 +343,7 @@ async function cacheSet(set) {
 async function main() {
   // Load shared configs
   await loadCollectorExclusives();
-  await loadSetConfigs();
+  await loadBoosterIndex();
 
   const setsPath = path.join(__dirname, '..', 'sets.json');
   const dataDir = path.join(__dirname, '..', 'data');
