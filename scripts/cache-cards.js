@@ -233,7 +233,11 @@ async function fetchSetCards(setCode, boosterType) {
     for (const card of allCards) {
       const inPlayBooster = await isInPlayBoosterByConfig(card, setCode);
       if (inPlayBooster === true) {
-        filteredCards.push(card);
+        // Still need to check for collector-exclusive treatments (fracturefoil, inverted, etc.)
+        // A card can be in the CN range but still be a collector-exclusive variant
+        if (!isCollectorExclusive(card)) {
+          filteredCards.push(card);
+        }
         continue;
       }
       const inCollectorExclusive = await isCollectorExclusiveByConfig(card, setCode);

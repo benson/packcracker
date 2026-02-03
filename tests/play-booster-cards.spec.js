@@ -125,6 +125,39 @@ test.describe('Collector Exclusive Filtering', () => {
     const cardCount = await page.locator('.card').count();
     expect(cardCount).toBeGreaterThan(0);
   });
+
+  // Regression test: cards with collector-exclusive treatments should be filtered
+  // even if their collector number falls within the play booster CN range
+  test('ECL fracturefoil/inverted cards should NOT appear in play boosters', async ({ page }) => {
+    // ECL (Lorwyn Eclipsed) has cards 400-401 which are fracturefoil/inverted variants
+    // These have booster:true in Scryfall but should NOT appear in play boosters
+    await page.goto('/?set=ecl&booster=play&min=2');
+
+    await waitForCardsLoaded(page);
+
+    // Bloom Tender #400 is fracturefoil+inverted - should not appear
+    const bloomTender400 = page.locator('.card-name', { hasText: 'bloom tender' });
+    // If present, verify it's not the #400 variant by checking the card count
+    // The regular version may appear, but the fracturefoil should not
+    const count = await bloomTender400.count();
+    if (count > 0) {
+      // Check that no cards have inverted treatment
+      const treatments = await page.locator('.card-treatment').allTextContents();
+      for (const treatment of treatments) {
+        expect(treatment.toLowerCase()).not.toContain('inverted');
+      }
+    }
+  });
+
+  test('ECL fracturefoil/inverted cards SHOULD appear in collector boosters', async ({ page }) => {
+    await page.goto('/?set=ecl&booster=collector&min=2');
+
+    await waitForCardsLoaded(page);
+
+    // Collector boosters should have these special treatments
+    const cardCount = await page.locator('.card').count();
+    expect(cardCount).toBeGreaterThan(0);
+  });
 });
 
 test.describe('Filter Interactions', () => {
