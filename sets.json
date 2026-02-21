@@ -40,13 +40,13 @@
     "released": "2025-01-24"
   },
   {
-    "code": "fdn",
-    "name": "Foundations",
+    "code": "j25",
+    "name": "Foundations Jumpstart",
     "released": "2024-11-15"
   },
   {
-    "code": "j25",
-    "name": "Foundations Jumpstart",
+    "code": "fdn",
+    "name": "Foundations",
     "released": "2024-11-15"
   },
   {
@@ -55,13 +55,13 @@
     "released": "2024-09-27"
   },
   {
-    "code": "mb2",
-    "name": "Mystery Booster 2",
+    "code": "blb",
+    "name": "Bloomburrow",
     "released": "2024-08-02"
   },
   {
-    "code": "blb",
-    "name": "Bloomburrow",
+    "code": "mb2",
+    "name": "Mystery Booster 2",
     "released": "2024-08-02"
   },
   {
