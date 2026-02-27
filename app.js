@@ -13,6 +13,9 @@ import {
   SETS_WITH_BIG_SCORE,
   SETS_WITH_SPECIAL_GUESTS,
   BONUS_SHEET_SETS,
+  loadBoosterIndex,
+  fetchSetConfig,
+  isInPlayBooster,
 } from 'https://bensonperry.com/shared/mtg.js';
 
 // Sets where retro frame cards appear in Play Boosters (not collector-exclusive)
@@ -364,12 +367,19 @@ async function fetchCachedSpecialGuestsCards(setCode) {
 // Live fetch from Scryfall API
 async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
   let query = 'set:' + setCode + ' lang:en';
+  let useBoosterData = false;
 
   // Jumpstart and draft-only sets don't use is:booster filter
   if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode) && !DRAFT_ONLY_SETS.has(setCode)) {
-    // For Play Boosters, include boosterfun cards (showcase/borderless appear in wildcard slot)
-    // Collector exclusives are filtered client-side
-    query += ' is:booster';
+    // Check if we have booster-data for this set (more reliable than Scryfall's
+    // is:booster flag, which isn't populated until after release)
+    const index = await loadBoosterIndex();
+    const types = index.boosters[setCode];
+    if (types) {
+      useBoosterData = true;
+    } else {
+      query += ' is:booster';
+    }
   }
 
   // Fetch all cards with any meaningful price (for accurate EV calculation)
@@ -383,6 +393,14 @@ async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
     cards = data.data;
   } catch (error) {
     if (error.message !== 'HTTP 404') throw error;
+  }
+
+  // When using booster-data, filter play booster cards by CN ranges
+  if (useBoosterData && boosterType !== 'collector') {
+    const setConfig = await fetchSetConfig(setCode);
+    if (setConfig) {
+      cards = cards.filter(card => isInPlayBooster(card, setConfig));
+    }
   }
 
   if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
@@ -756,8 +774,9 @@ async function init() {
   const setHidden = document.getElementById('set-select');
 
   try {
-    // Load sets from shared module
-    setsData = await fetchSets();
+    // Load sets from shared module, only show released or upcoming (within 7 days)
+    const cutoff = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    setsData = (await fetchSets()).filter(s => s.released <= cutoff);
 
     // Set up autocomplete using shared module
     autocomplete = createSetAutocomplete({
