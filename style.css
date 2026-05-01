@@ -448,6 +448,10 @@ select:disabled {
 
 /* theme toggle */
 .theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
@@ -467,12 +471,6 @@ select:disabled {
 
 .theme-icon {
   margin-right: 4px;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
 .no-results {
