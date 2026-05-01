@@ -98,8 +98,10 @@ function getPlayBoosterRanges(boosterFile) {
   if (!boosterFile?.slots) return null;
   const ranges = [];
   for (const slot of boosterFile.slots) {
-    if (slot.pool?.nonfoil) ranges.push(...slot.pool.nonfoil);
-    if (slot.pool?.foil) ranges.push(...slot.pool.foil);
+    if (!slot.pool || slot.bonusSet) continue;
+    for (const finishRanges of Object.values(slot.pool)) {
+      if (Array.isArray(finishRanges)) ranges.push(...finishRanges);
+    }
   }
   return [...new Set(ranges)];
 }
@@ -410,6 +412,14 @@ async function main() {
     errors: errors.length,
   };
   fs.writeFileSync(path.join(dataDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+  if (errors.length > 0) {
+    console.error(`\nFailing run: ${errors.length} set(s) errored. Refusing to publish a partial cache.`);
+    process.exit(1);
+  }
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
