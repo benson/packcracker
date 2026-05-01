@@ -449,8 +449,8 @@ select:disabled {
 /* theme toggle */
 .theme-toggle {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 40px;
+  right: 30px;
   z-index: 100;
   appearance: none;
   -webkit-appearance: none;
