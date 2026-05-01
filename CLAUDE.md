@@ -7,7 +7,7 @@ MTG booster pack value guide. Static site hosted on GitHub Pages.
 - `app.js` - main application logic
 - `scripts/cache-cards.js` - GitHub Actions script for daily price cache
 - `data/` - cached card data JSON files per set
-- `sets.json` - set metadata
+- Set list (master): `https://bensonperry.com/shared/sets.json` — built by homepage's update-sets workflow. Both the frontend (via `fetchSets` in shared/mtg.js) and the cache-cards.js CI script read from there. No local `sets.json` here.
 
 ## Key patterns
 

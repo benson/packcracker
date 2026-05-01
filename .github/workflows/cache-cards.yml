@@ -22,57 +22,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Update sets list
-        run: |
-          curl -s "https://api.scryfall.com/sets" | node -e "
-          const chunks = [];
-          process.stdin.on('data', chunk => chunks.push(chunk));
-          process.stdin.on('end', () => {
-            const data = JSON.parse(Buffer.concat(chunks).toString());
-            const validTypes = ['core', 'expansion', 'draft_innovation', 'masters', 'funny'];
-            // Sets that aren't openable as regular booster packs
-            const blacklist = [
-              // Heroes of the Realm (employee-only)
-              'ph23', 'ph22', 'ph21', 'ph20', 'ph19', 'ph18', 'ph17', 'phtr',
-              // Not actual booster products
-              'plst', 'ulst', 'sunf', 'slx', 'cmb1', 'cmb2', 'h17', 'hho', 'punk', 'unk',
-              // Promo/box sets (not boosters)
-              'ptg', 'und',
-              // Bonus sheets (part of other sets)
-              'big', 'spg',
-              // Regional reprints
-              'bchr', '4bb', 'fbb', 'ren', 'rin',
-              // Summer Magic
-              'sum',
-              // Timeshifts (part of other sets)
-              'h1r', 'h2r', 'tsb'
-            ];
-            const sets = data.data
-              .filter(set =>
-                validTypes.includes(set.set_type) &&
-                !set.digital &&
-                !blacklist.includes(set.code) &&
-                set.card_count > 0 &&
-                new Date(set.released_at) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-              )
-              .sort((a, b) => new Date(b.released_at) - new Date(a.released_at))
-              .map(set => ({
-                code: set.code,
-                name: set.name,
-                released: set.released_at
-              }));
-            console.log(JSON.stringify(sets, null, 2));
-          });
-          " > sets.json
-
       - name: Cache card data from Scryfall
+        # Reads the set list from bensonperry.com/shared/sets.json (built by homepage's
+        # update-sets workflow). One source of truth, no drift, no local blacklist.
         run: node scripts/cache-cards.js
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sets.json data/
+          git add data/
           git diff --staged --quiet || git commit -m "Update card cache $(date -u +%Y-%m-%d)"
           git pull --rebase
           git push

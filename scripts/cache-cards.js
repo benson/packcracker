@@ -343,16 +343,24 @@ async function cacheSet(set) {
   return cacheData;
 }
 
+const SHARED_SETS_URL = 'https://bensonperry.com/shared/sets.json';
+
+async function loadSets() {
+  const res = await fetch(SHARED_SETS_URL);
+  if (!res.ok) throw new Error(`Failed to fetch ${SHARED_SETS_URL}: HTTP ${res.status}`);
+  return res.json();
+}
+
 async function main() {
   // Load shared configs
   await loadCollectorExclusives();
   await loadBoosterIndex();
 
-  const setsPath = path.join(__dirname, '..', 'sets.json');
   const dataDir = path.join(__dirname, '..', 'data');
 
-  // Load sets
-  const sets = JSON.parse(fs.readFileSync(setsPath, 'utf8'));
+  // Source of truth: bensonperry.com/shared/sets.json (built by homepage/scripts/update-sets.js
+  // from Scryfall + booster-data index). One list, no drift.
+  const sets = await loadSets();
   console.log(`Found ${sets.length} sets to cache\n`);
 
   // Process sets in batches to avoid overwhelming Scryfall
