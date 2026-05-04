@@ -1,5 +1,25 @@
 {
-  "updated": "2026-04-30T08:29:34.966Z",
-  "sets": 124,
-  "errors": 45
+  "updated": "2026-05-04T20:13:58.896Z",
+  "mode": "incremental",
+  "selected": 11,
+  "sets": 11,
+  "errors": 0,
+  "activeReleaseDays": 120,
+  "upcomingDays": 90,
+  "staleHours": 20,
+  "maxTargets": 25,
+  "refreshed": [
+    "msh",
+    "sos",
+    "tmt",
+    "ecl",
+    "spg",
+    "eos",
+    "fca",
+    "otp",
+    "soa",
+    "mar",
+    "tle"
+  ],
+  "failed": []
 }
