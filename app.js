@@ -244,6 +244,7 @@ function updateFilterToggles(setCode, releaseDate) {
 // Try to load from cache first, fall back to live API
 async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   let cards = [];
+  let loadedFromCache = false;
 
   // Try cached data first
   try {
@@ -251,6 +252,7 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
     if (cached && cached.length > 0) {
       console.log('Loaded ' + cached.length + ' cards from cache for ' + setCode);
       cards = cached;
+      loadedFromCache = true;
 
       // If includeSpecialGuests, also get cached Special Guests cards
       if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
@@ -269,12 +271,16 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
 
   // Always fetch bonus sheet cards (like Avatar source material)
   if (BONUS_SHEET_SETS[setCode]) {
-    const bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
+    let bonusCards = await fetchCachedBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
+    if (bonusCards.length === 0) {
+      bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
+    }
     cards = [...cards, ...bonusCards];
   }
 
-  // Fetch retro frame cards for sets where they appear in Play Boosters
-  if (SETS_WITH_RETRO_IN_BOOSTERS.has(setCode)) {
+  // Cached set files already include retro-frame cards. Only use the live retro
+  // fallback when the main set cache missed and we are already using the API.
+  if (!loadedFromCache && SETS_WITH_RETRO_IN_BOOSTERS.has(setCode)) {
     const retroCards = await fetchRetroFrameCards(setCode);
     cards = [...cards, ...retroCards];
   }
@@ -362,6 +368,15 @@ async function fetchCachedSpecialGuestsCards(setCode) {
   }
 
   return cards;
+}
+
+async function fetchCachedBonusSheetCards(bonusSetCode, boosterType) {
+  try {
+    const cards = await fetchCachedCards(bonusSetCode, boosterType);
+    return (cards || []).map(card => ({ ...card, _fromBonusSheet: true }));
+  } catch (e) {
+    return [];
+  }
 }
 
 // Live fetch from Scryfall API

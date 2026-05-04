@@ -11,7 +11,19 @@ const path = require('path');
 const SCRYFALL_API = 'https://api.scryfall.com';
 const BOOSTER_DATA_URL = 'https://bensonperry.com/booster-data';
 const MIN_PRICE = 1; // Cache cards worth $1+
-const RATE_LIMIT_MS = 100; // Scryfall asks for 50-100ms between requests
+const RATE_LIMIT_MS = 200; // Scryfall asks for 50-100ms between requests; keep a cushion for Actions.
+const DEFAULT_ACTIVE_RELEASE_DAYS = 120;
+const DEFAULT_UPCOMING_DAYS = 90;
+const DEFAULT_STALE_HOURS = 20;
+const DEFAULT_MAX_INCREMENTAL_TARGETS = 25;
+const SHARED_SETS_URL = 'https://bensonperry.com/shared/sets.json';
+const SHARED_METADATA_URL = 'https://bensonperry.com/shared/metadata.json';
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const SCRYFALL_HEADERS = {
+  Accept: 'application/json;q=0.9,*/*;q=0.8',
+  'User-Agent': 'packcracker-card-cache/1.0 (https://github.com/benson/packcracker)',
+};
 
 // Jumpstart sets have their own booster type (no play/collector distinction)
 const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
@@ -24,6 +36,7 @@ let COLLECTOR_EXCLUSIVE_FRAMES = [];
 // Booster data loaded from booster-data project
 let boosterIndex = {};
 let boosterFileCache = {};
+let scryfallSearchCache = new Map();
 
 async function loadCollectorExclusives() {
   try {
@@ -170,13 +183,33 @@ function isCollectorExclusive(card) {
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url, retries = 3) {
+function getRetryDelayMs(response, attempt) {
+  const retryAfter = response.headers?.get('retry-after');
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (!Number.isNaN(seconds)) return seconds * 1000;
+
+    const dateMs = Date.parse(retryAfter);
+    if (!Number.isNaN(dateMs)) return Math.max(dateMs - Date.now(), RATE_LIMIT_MS);
+  }
+
+  return Math.min(2000 * attempt, 30000);
+}
+
+async function fetchWithRetry(url, retries = 6) {
+  let lastError = null;
+
   for (let i = 0; i < retries; i++) {
+    const attempt = i + 1;
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: SCRYFALL_HEADERS });
       if (response.status === 429) {
-        console.log('  Rate limited, waiting 2s...');
-        await delay(2000);
+        lastError = new Error(`HTTP 429 after ${attempt} attempt(s)`);
+        if (attempt >= retries) break;
+
+        const waitMs = getRetryDelayMs(response, attempt);
+        console.log(`  Rate limited, waiting ${Math.ceil(waitMs / 1000)}s...`);
+        await delay(waitMs);
         continue;
       }
       if (!response.ok) {
@@ -184,9 +217,46 @@ async function fetchWithRetry(url, retries = 3) {
       }
       return await response.json();
     } catch (error) {
-      if (i === retries - 1) throw error;
-      await delay(500 * (i + 1));
+      lastError = error;
+      if (attempt >= retries) break;
+      await delay(500 * attempt);
     }
+  }
+
+  throw lastError || new Error(`Failed to fetch ${url}`);
+}
+
+async function fetchScryfallSearch(url) {
+  if (scryfallSearchCache.has(url)) {
+    return scryfallSearchCache.get(url);
+  }
+
+  const fetchPromise = (async () => {
+    let allCards = [];
+    let nextUrl = url;
+
+    while (nextUrl) {
+      await delay(RATE_LIMIT_MS);
+      const data = await fetchWithRetry(nextUrl);
+      allCards = allCards.concat(data.data || []);
+      nextUrl = data.has_more ? data.next_page : null;
+
+      // Limit to first 2 pages (350 cards) to keep files reasonable
+      if (allCards.length >= 350) break;
+    }
+
+    return allCards;
+  })();
+
+  scryfallSearchCache.set(url, fetchPromise);
+
+  try {
+    const cards = await fetchPromise;
+    scryfallSearchCache.set(url, cards);
+    return cards;
+  } catch (error) {
+    scryfallSearchCache.delete(url);
+    throw error;
   }
 }
 
@@ -210,18 +280,9 @@ async function fetchSetCards(setCode, boosterType) {
   const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
 
   let allCards = [];
-  let nextUrl = url;
 
   try {
-    while (nextUrl) {
-      await delay(RATE_LIMIT_MS);
-      const data = await fetchWithRetry(nextUrl);
-      allCards = allCards.concat(data.data || []);
-      nextUrl = data.has_more ? data.next_page : null;
-
-      // Limit to first 2 pages (350 cards) to keep files reasonable
-      if (allCards.length >= 350) break;
-    }
+    allCards = await fetchScryfallSearch(url);
   } catch (error) {
     if (error.message === 'HTTP 404') {
       return []; // No cards match - that's fine
@@ -250,6 +311,20 @@ async function fetchSetCards(setCode, boosterType) {
   }
 
   return allCards;
+}
+
+async function fetchAllPricedCards(setCode) {
+  const query = `set:${setCode} lang:en (usd>=0.5 OR usd_foil>=0.5)`;
+  const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
+
+  try {
+    return await fetchScryfallSearch(url);
+  } catch (error) {
+    if (error.message === 'HTTP 404') {
+      return [];
+    }
+    throw error;
+  }
 }
 
 function processCard(card) {
@@ -297,16 +372,7 @@ function processCard(card) {
   return null;
 }
 
-async function cacheSet(set) {
-  console.log(`Caching ${set.code} (${set.name})...`);
-
-  // Fetch both booster types
-  const [playCards, collectorCards] = await Promise.all([
-    fetchSetCards(set.code, 'play'),
-    delay(RATE_LIMIT_MS).then(() => fetchSetCards(set.code, 'collector'))
-  ]);
-
-  // Process and dedupe
+function buildCacheData(set, playCards, collectorCards) {
   const seenIds = new Set();
   const processedPlay = [];
   const processedCollector = [];
@@ -343,7 +409,24 @@ async function cacheSet(set) {
   return cacheData;
 }
 
-const SHARED_SETS_URL = 'https://bensonperry.com/shared/sets.json';
+async function cacheMainSet(set) {
+  // Fetch booster types sequentially so the scheduled job stays inside Scryfall's rate limits.
+  const playCards = await fetchSetCards(set.code, 'play');
+  const collectorCards = await fetchSetCards(set.code, 'collector');
+  return buildCacheData(set, playCards, collectorCards);
+}
+
+async function cacheAuxiliarySet(set) {
+  const cards = await fetchAllPricedCards(set.code);
+  return buildCacheData(set, cards, cards);
+}
+
+async function cacheTarget(target) {
+  console.log(`Caching ${target.code} (${target.name}) [${target.reason}]...`);
+  return target.strategy === 'all'
+    ? cacheAuxiliarySet(target)
+    : cacheMainSet(target);
+}
 
 async function loadSets() {
   const res = await fetch(SHARED_SETS_URL);
@@ -351,7 +434,242 @@ async function loadSets() {
   return res.json();
 }
 
+async function loadMetadata() {
+  try {
+    const res = await fetch(SHARED_METADATA_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data?.sets || {};
+  } catch (error) {
+    console.warn(`Warning: could not load shared metadata: ${error.message}`);
+    return {};
+  }
+}
+
+function splitCodes(value) {
+  return String(value || '')
+    .split(/[,\s]+/)
+    .map(code => code.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function parseNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseArgs(argv) {
+  const options = {
+    mode: (process.env.CACHE_MODE || 'incremental').toLowerCase(),
+    setCodes: splitCodes(process.env.CACHE_SETS),
+    activeReleaseDays: parseNumber(process.env.CACHE_ACTIVE_RELEASE_DAYS, DEFAULT_ACTIVE_RELEASE_DAYS),
+    upcomingDays: parseNumber(process.env.CACHE_UPCOMING_DAYS, DEFAULT_UPCOMING_DAYS),
+    staleHours: parseNumber(process.env.CACHE_STALE_HOURS, DEFAULT_STALE_HOURS),
+    maxTargets: parseNumber(process.env.CACHE_MAX_TARGETS, DEFAULT_MAX_INCREMENTAL_TARGETS),
+    dryRun: false,
+  };
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--full') {
+      options.mode = 'full';
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--mode' && argv[i + 1]) {
+      options.mode = argv[++i].toLowerCase();
+    } else if (arg.startsWith('--mode=')) {
+      options.mode = arg.slice('--mode='.length).toLowerCase();
+    } else if ((arg === '--set' || arg === '--sets') && argv[i + 1]) {
+      options.setCodes.push(...splitCodes(argv[++i]));
+    } else if (arg.startsWith('--set=')) {
+      options.setCodes.push(...splitCodes(arg.slice('--set='.length)));
+    } else if (arg.startsWith('--sets=')) {
+      options.setCodes.push(...splitCodes(arg.slice('--sets='.length)));
+    } else if (arg === '--active-release-days' && argv[i + 1]) {
+      options.activeReleaseDays = parseNumber(argv[++i], options.activeReleaseDays);
+    } else if (arg.startsWith('--active-release-days=')) {
+      options.activeReleaseDays = parseNumber(arg.slice('--active-release-days='.length), options.activeReleaseDays);
+    } else if (arg === '--upcoming-days' && argv[i + 1]) {
+      options.upcomingDays = parseNumber(argv[++i], options.upcomingDays);
+    } else if (arg.startsWith('--upcoming-days=')) {
+      options.upcomingDays = parseNumber(arg.slice('--upcoming-days='.length), options.upcomingDays);
+    } else if (arg === '--stale-hours' && argv[i + 1]) {
+      options.staleHours = parseNumber(argv[++i], options.staleHours);
+    } else if (arg.startsWith('--stale-hours=')) {
+      options.staleHours = parseNumber(arg.slice('--stale-hours='.length), options.staleHours);
+    } else if (arg === '--max-targets' && argv[i + 1]) {
+      options.maxTargets = parseNumber(argv[++i], options.maxTargets);
+    } else if (arg.startsWith('--max-targets=')) {
+      options.maxTargets = parseNumber(arg.slice('--max-targets='.length), options.maxTargets);
+    }
+  }
+
+  options.setCodes = [...new Set(options.setCodes)];
+
+  if (options.mode !== 'incremental' && options.mode !== 'full') {
+    throw new Error(`Unknown cache mode "${options.mode}". Use "incremental" or "full".`);
+  }
+
+  return options;
+}
+
+function readCacheInfo(dataDir, code) {
+  const filePath = path.join(dataDir, `${code}.json`);
+  if (!fs.existsSync(filePath)) return { exists: false, updated: null };
+
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return { exists: true, updated: data.updated || null };
+  } catch (error) {
+    return { exists: true, updated: null };
+  }
+}
+
+function isStale(cacheInfo, now, staleHours) {
+  if (!cacheInfo.exists || !cacheInfo.updated) return true;
+  const updatedMs = Date.parse(cacheInfo.updated);
+  if (Number.isNaN(updatedMs)) return true;
+  return now - updatedMs >= staleHours * HOUR_MS;
+}
+
+function releaseWindowReason(set, now, options) {
+  const releasedMs = Date.parse(set.released);
+  if (Number.isNaN(releasedMs)) return null;
+
+  const daysFromRelease = (now - releasedMs) / DAY_MS;
+  if (daysFromRelease < 0 && Math.abs(daysFromRelease) <= options.upcomingDays) {
+    return 'upcoming';
+  }
+  if (daysFromRelease >= 0 && daysFromRelease <= options.activeReleaseDays) {
+    return 'active-release-window';
+  }
+  return null;
+}
+
+function makeTarget({ code, name, strategy = 'booster', reason }) {
+  return { code: code.toLowerCase(), name, strategy, reason };
+}
+
+function addTarget(targets, target) {
+  const existing = targets.get(target.code);
+  if (existing) {
+    existing.reason = `${existing.reason}, ${target.reason}`;
+    return;
+  }
+  targets.set(target.code, target);
+}
+
+function selectMainTargets(sets, dataDir, options, now) {
+  const explicit = new Set(options.setCodes);
+  const targets = new Map();
+
+  for (const set of sets) {
+    const code = set.code.toLowerCase();
+    const cacheInfo = readCacheInfo(dataDir, code);
+    const explicitlySelected = explicit.has(code);
+
+    if (options.mode === 'full') {
+      addTarget(targets, makeTarget({ ...set, reason: 'full-refresh' }));
+      continue;
+    }
+
+    if (explicitlySelected) {
+      addTarget(targets, makeTarget({ ...set, reason: 'manual-set' }));
+      continue;
+    }
+
+    if (!cacheInfo.exists) {
+      addTarget(targets, makeTarget({ ...set, reason: 'missing-cache' }));
+      continue;
+    }
+
+    const windowReason = releaseWindowReason(set, now, options);
+    if (windowReason && isStale(cacheInfo, now, options.staleHours)) {
+      addTarget(targets, makeTarget({ ...set, reason: windowReason }));
+    }
+  }
+
+  return targets;
+}
+
+function buildAuxiliaryIndex(metadata) {
+  const auxiliary = new Map();
+
+  function remember(code, name, parentCode, reason) {
+    const normalized = code.toLowerCase();
+    if (!auxiliary.has(normalized)) {
+      auxiliary.set(normalized, {
+        code: normalized,
+        name,
+        parents: new Set(),
+        reasons: new Set(),
+      });
+    }
+    const entry = auxiliary.get(normalized);
+    entry.parents.add(parentCode);
+    entry.reasons.add(reason);
+  }
+
+  for (const [parentCode, meta] of Object.entries(metadata || {})) {
+    if (meta.specialGuests) {
+      remember('spg', 'Special Guests', parentCode, 'special-guests');
+    }
+    if (meta.hasBigScore) {
+      remember('big', 'The Big Score', parentCode, 'big-score');
+    }
+    if (meta.bonusSheet) {
+      remember(meta.bonusSheet, `${meta.bonusSheet.toUpperCase()} bonus sheet`, parentCode, 'bonus-sheet');
+    }
+  }
+
+  return auxiliary;
+}
+
+function selectAuxiliaryTargets(metadata, mainTargets, dataDir, options) {
+  const explicit = new Set(options.setCodes);
+  const selectedMainCodes = new Set(mainTargets.keys());
+  const auxiliary = buildAuxiliaryIndex(metadata);
+  const targets = new Map();
+
+  for (const entry of auxiliary.values()) {
+    const parentSelected = [...entry.parents].some(parent => selectedMainCodes.has(parent));
+    const explicitlySelected = explicit.has(entry.code);
+    const cacheInfo = readCacheInfo(dataDir, entry.code);
+
+    if (options.mode === 'full' || parentSelected || explicitlySelected || !cacheInfo.exists) {
+      const reason = options.mode === 'full'
+        ? 'full-refresh'
+        : [
+            parentSelected && `paired-with-${[...entry.parents].filter(parent => selectedMainCodes.has(parent)).join('+')}`,
+            explicitlySelected && 'manual-set',
+            !cacheInfo.exists && 'missing-cache',
+          ].filter(Boolean).join(', ');
+
+      addTarget(targets, makeTarget({
+        code: entry.code,
+        name: entry.name,
+        strategy: 'all',
+        reason,
+      }));
+    }
+  }
+
+  return targets;
+}
+
+function combineTargets(...targetMaps) {
+  const combined = new Map();
+  for (const targetMap of targetMaps) {
+    for (const target of targetMap.values()) {
+      addTarget(combined, target);
+    }
+  }
+  return [...combined.values()];
+}
+
 async function main() {
+  const options = parseArgs(process.argv.slice(2));
+
   // Load shared configs
   await loadCollectorExclusives();
   await loadBoosterIndex();
@@ -361,63 +679,85 @@ async function main() {
   // Source of truth: bensonperry.com/shared/sets.json (built by homepage/scripts/update-sets.js
   // from Scryfall + booster-data index). One list, no drift.
   const sets = await loadSets();
-  console.log(`Found ${sets.length} sets to cache\n`);
+  const metadata = await loadMetadata();
+  const now = Date.now();
+  const mainTargets = selectMainTargets(sets, dataDir, options, now);
+  const auxiliaryTargets = selectAuxiliaryTargets(metadata, mainTargets, dataDir, options);
+  const targets = combineTargets(mainTargets, auxiliaryTargets);
 
-  // Process sets in batches to avoid overwhelming Scryfall
+  console.log(`Cache mode: ${options.mode}`);
+  console.log(`Found ${sets.length} main sets; selected ${mainTargets.size} main and ${auxiliaryTargets.size} auxiliary target(s).`);
+  if (options.mode === 'incremental') {
+    console.log(`Window: ${options.activeReleaseDays} days back, ${options.upcomingDays} days forward, stale after ${options.staleHours} hours.`);
+    console.log(`Circuit breaker: max ${options.maxTargets || 'unlimited'} incremental target(s).`);
+  }
+  console.log('');
+
+  if (targets.length === 0) {
+    console.log('Nothing to refresh.');
+    return;
+  }
+
+  targets.forEach(target => console.log(`  - ${target.code}: ${target.reason}`));
+  console.log('');
+
+  if (options.mode === 'incremental' && options.maxTargets > 0 && targets.length > options.maxTargets) {
+    throw new Error(`Incremental cache selected ${targets.length} targets, above the safety limit of ${options.maxTargets}. Run with --full or raise --max-targets if this is intentional.`);
+  }
+
+  if (options.dryRun) {
+    console.log('Dry run complete; no files written.');
+    return;
+  }
+
+  // Process targets in batches to avoid overwhelming Scryfall
   const BATCH_SIZE = 5;
   let processed = 0;
   let errors = [];
 
-  for (let i = 0; i < sets.length; i += BATCH_SIZE) {
-    const batch = sets.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+    const batch = targets.slice(i, i + BATCH_SIZE);
 
-    for (const set of batch) {
+    for (const target of batch) {
       try {
-        const cacheData = await cacheSet(set);
-        const filePath = path.join(dataDir, `${set.code}.json`);
+        const cacheData = await cacheTarget(target);
+        const filePath = path.join(dataDir, `${target.code}.json`);
         fs.writeFileSync(filePath, JSON.stringify(cacheData));
         processed++;
       } catch (error) {
-        console.error(`  Error caching ${set.code}: ${error.message}`);
-        errors.push({ set: set.code, error: error.message });
+        console.error(`  Error caching ${target.code}: ${error.message}`);
+        errors.push({ set: target.code, error: error.message });
       }
     }
 
     // Longer pause between batches
-    if (i + BATCH_SIZE < sets.length) {
-      console.log(`\nPausing between batches... (${processed}/${sets.length} done)\n`);
+    if (i + BATCH_SIZE < targets.length) {
+      console.log(`\nPausing between batches... (${processed}/${targets.length} done)\n`);
       await delay(1000);
     }
   }
 
-  console.log(`\nDone! Cached ${processed} sets.`);
+  console.log(`\nDone! Cached ${processed} target(s).`);
   if (errors.length > 0) {
     console.log(`Errors: ${errors.length}`);
     errors.forEach(e => console.log(`  - ${e.set}: ${e.error}`));
   }
 
-  // Cache Special Guests (spg) and The Big Score (big) for Play Booster sets
-  console.log('\nCaching Special Guests and The Big Score...');
-  const specialSets = [
-    { code: 'spg', name: 'Special Guests' },
-    { code: 'big', name: 'The Big Score' }
-  ];
-
-  for (const specialSet of specialSets) {
-    try {
-      const cacheData = await cacheSet(specialSet);
-      const filePath = path.join(dataDir, `${specialSet.code}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(cacheData));
-    } catch (error) {
-      console.error(`  Error caching ${specialSet.code}: ${error.message}`);
-    }
-  }
-
   // Write a manifest file with last update time
   const manifest = {
     updated: new Date().toISOString(),
+    mode: options.mode,
+    selected: targets.length,
     sets: processed,
     errors: errors.length,
+    activeReleaseDays: options.activeReleaseDays,
+    upcomingDays: options.upcomingDays,
+    staleHours: options.staleHours,
+    maxTargets: options.maxTargets,
+    refreshed: targets
+      .filter(target => !errors.some(error => error.set === target.code))
+      .map(target => target.code),
+    failed: errors,
   };
   fs.writeFileSync(path.join(dataDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 

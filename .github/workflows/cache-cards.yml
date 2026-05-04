@@ -2,9 +2,33 @@ name: Cache Card Data
 
 on:
   schedule:
-    # Run daily at 6 AM UTC
-    - cron: '0 6 * * *'
-  workflow_dispatch: # Allow manual trigger
+    # Run after shared set metadata updates, away from other Scryfall-backed jobs.
+    - cron: '20 9 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Cache mode'
+        required: false
+        default: 'incremental'
+        type: choice
+        options:
+          - incremental
+          - full
+      sets:
+        description: 'Optional comma-separated set codes to refresh'
+        required: false
+        default: ''
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  CACHE_ACTIVE_RELEASE_DAYS: '120'
+  CACHE_UPCOMING_DAYS: '90'
+  CACHE_STALE_HOURS: '20'
+  CACHE_MAX_TARGETS: '25'
+
+concurrency:
+  group: packcracker-cache-cards
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -20,12 +44,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Cache card data from Scryfall
         # Reads the set list from bensonperry.com/shared/sets.json (built by homepage's
         # update-sets workflow). One source of truth, no drift, no local blacklist.
-        run: node scripts/cache-cards.js
+        env:
+          CACHE_MODE: ${{ github.event.inputs.mode || 'incremental' }}
+          CACHE_SETS: ${{ github.event.inputs.sets || '' }}
+        run: node scripts/cache-cards.js --mode "$CACHE_MODE" --sets "$CACHE_SETS"
 
       - name: Commit and push changes
         run: |
