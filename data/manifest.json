@@ -1,8 +1,8 @@
 {
-  "updated": "2026-05-04T20:13:58.896Z",
+  "updated": "2026-05-06T11:23:34.355Z",
   "mode": "incremental",
-  "selected": 11,
-  "sets": 11,
+  "selected": 6,
+  "sets": 6,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
@@ -14,12 +14,7 @@
     "tmt",
     "ecl",
     "spg",
-    "eos",
-    "fca",
-    "otp",
-    "soa",
-    "mar",
-    "tle"
+    "soa"
   ],
   "failed": []
 }
