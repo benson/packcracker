@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
 
 // Test cards that should appear in play boosters
 // These are expensive cards with different treatments across key sets
@@ -102,6 +104,26 @@ test.describe('Special Guests Toggle', () => {
 });
 
 test.describe('Collector Exclusive Filtering', () => {
+  test('serialized variants are not cached in play booster pools', async () => {
+    const dataDir = path.join(__dirname, '..', 'data');
+    const hits = [];
+
+    for (const file of fs.readdirSync(dataDir)) {
+      if (!file.endsWith('.json') || file === 'manifest.json') continue;
+      const data = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf8'));
+
+      for (const card of data.play || []) {
+        const collectorNumber = String(card.collector_number || '');
+        const promoTypes = card.promo_types || [];
+        if (/^\d+z$/i.test(collectorNumber) || promoTypes.includes('serialized')) {
+          hits.push(`${file}: ${card.name} #${collectorNumber}`);
+        }
+      }
+    }
+
+    expect(hits).toEqual([]);
+  });
+
   test('Extended art cards should NOT appear in play boosters', async ({ page }) => {
     // Navigate to a set and check that extended art cards are filtered out
     await page.goto('/?set=mkm&booster=play&min=2');
@@ -124,6 +146,15 @@ test.describe('Collector Exclusive Filtering', () => {
     // Should have some cards (collector has more treatments)
     const cardCount = await page.locator('.card').count();
     expect(cardCount).toBeGreaterThan(0);
+  });
+
+  test('MKM serialized cards should NOT appear in play boosters', async ({ page }) => {
+    await page.goto('/?set=mkm&booster=play&min=100');
+
+    await waitForCardsLoaded(page);
+
+    await expect(page.locator('.card-name', { hasText: 'teysa, opulent oligarch' })).toHaveCount(0);
+    await expect(page.locator('.card-name', { hasText: 'lazav, wearer of faces' })).toHaveCount(0);
   });
 
   // Regression test: cards with collector-exclusive treatments should be filtered

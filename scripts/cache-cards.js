@@ -39,6 +39,19 @@ let boosterFileCache = {};
 let scryfallSearchCache = new Map();
 
 async function loadCollectorExclusives() {
+  const localPath = path.join(__dirname, '..', '..', 'homepage', 'shared', 'collector-exclusives.json');
+  try {
+    if (fs.existsSync(localPath)) {
+      const data = JSON.parse(fs.readFileSync(localPath, 'utf8'));
+      COLLECTOR_EXCLUSIVE_PROMOS = data.promos;
+      COLLECTOR_EXCLUSIVE_FRAMES = data.frames;
+      console.log('Loaded collector exclusives from local shared config');
+      return;
+    }
+  } catch (error) {
+    // Fall through to remote
+  }
+
   try {
     const response = await fetch('https://bensonperry.com/shared/collector-exclusives.json');
     const data = await response.json();
@@ -49,9 +62,10 @@ async function loadCollectorExclusives() {
     // Fallback to hardcoded values if fetch fails
     console.warn('Failed to fetch collector exclusives, using fallback values');
     COLLECTOR_EXCLUSIVE_PROMOS = [
-      'fracturefoil', 'texturedfoil', 'ripplefoil',
+      'fracturefoil', 'texturedfoil', 'textured', 'ripplefoil',
       'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil',
-      'raisedfoil', 'headliner'
+      'raisedfoil', 'serialized', 'manafoil', 'invisibleink', 'neonink',
+      'headliner'
     ];
     COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
   }
@@ -135,7 +149,12 @@ function getCollectorExclusiveRanges(boosterFile) {
 
 // Check if collector number is in a range like "262-281" or "342"
 function isInRange(cn, rangeStr) {
-  const cnNum = parseInt(cn, 10);
+  const cnText = String(cn ?? '').trim();
+  // Scryfall uses a "z" suffix for serialized variants of existing collector
+  // numbers (e.g. MKM 321z). Numeric booster ranges should not match those.
+  if (/^\d+z$/i.test(cnText)) return false;
+
+  const cnNum = parseInt(cnText, 10);
   if (isNaN(cnNum)) return false;
   if (rangeStr.includes('-')) {
     const [start, end] = rangeStr.split('-').map(n => parseInt(n, 10));
@@ -146,6 +165,8 @@ function isInRange(cn, rangeStr) {
 
 // Check if card is in play booster based on booster data
 async function isInPlayBoosterByConfig(card, setCode) {
+  if (hasCollectorExclusivePromo(card)) return false;
+
   const types = boosterIndex.boosters?.[setCode];
   if (!types) return null;
 
@@ -171,6 +192,11 @@ async function isCollectorExclusiveByConfig(card, setCode) {
 
   const cn = card.collector_number;
   return ranges.some(range => isInRange(cn, range));
+}
+
+function hasCollectorExclusivePromo(card) {
+  const promos = card.promo_types || [];
+  return promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
 }
 
 // Check if card is collector-exclusive using generic rules
