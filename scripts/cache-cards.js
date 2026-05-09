@@ -147,6 +147,18 @@ function getCollectorExclusiveRanges(boosterFile) {
   return ranges.length > 0 ? [...new Set(ranges)] : null;
 }
 
+function getBonusSheetRanges(boosterFile, bonusSetCode) {
+  if (!boosterFile?.slots) return null;
+  const ranges = [];
+  for (const slot of boosterFile.slots) {
+    if (slot.bonusSet !== bonusSetCode || !slot.pool) continue;
+    for (const finishRanges of Object.values(slot.pool)) {
+      if (Array.isArray(finishRanges)) ranges.push(...finishRanges);
+    }
+  }
+  return ranges.length > 0 ? [...new Set(ranges)] : null;
+}
+
 // Check if collector number is in a range like "262-281" or "342"
 function isInRange(cn, rangeStr) {
   const cnText = String(cn ?? '').trim();
@@ -444,7 +456,42 @@ async function cacheMainSet(set) {
 
 async function cacheAuxiliarySet(set) {
   const cards = await fetchAllPricedCards(set.code);
+
+  if (set.auxiliaryReasons?.includes('bonus-sheet')) {
+    const playRanges = await getParentBonusSheetRanges(set, 'play');
+    const collectorRanges = await getParentBonusSheetRanges(set, 'collector');
+
+    if (playRanges.length > 0 || collectorRanges.length > 0) {
+      const playCards = playRanges.length > 0
+        ? cards.filter(card => playRanges.some(range => isInRange(card.collector_number, range)))
+        : [];
+      const collectorCards = collectorRanges.length > 0
+        ? cards.filter(card => collectorRanges.some(range => isInRange(card.collector_number, range)))
+        : cards;
+
+      return buildCacheData(set, playCards, collectorCards);
+    }
+  }
+
   return buildCacheData(set, cards, cards);
+}
+
+async function getParentBonusSheetRanges(set, boosterType) {
+  const ranges = [];
+  for (const parentCode of set.parents || []) {
+    const types = boosterIndex.boosters?.[parentCode];
+    if (!types) continue;
+
+    const parentBoosterType = boosterType === 'play'
+      ? types.includes('play') ? 'play' : types.includes('draft') ? 'draft' : null
+      : types.includes('collector') ? 'collector' : null;
+    if (!parentBoosterType) continue;
+
+    const boosterFile = await loadBoosterFile(parentCode, parentBoosterType);
+    const bonusRanges = getBonusSheetRanges(boosterFile, set.code);
+    if (bonusRanges) ranges.push(...bonusRanges);
+  }
+  return [...new Set(ranges)];
 }
 
 async function cacheTarget(target) {
@@ -572,14 +619,16 @@ function releaseWindowReason(set, now, options) {
   return null;
 }
 
-function makeTarget({ code, name, strategy = 'booster', reason }) {
-  return { code: code.toLowerCase(), name, strategy, reason };
+function makeTarget({ code, name, strategy = 'booster', reason, parents = [], auxiliaryReasons = [] }) {
+  return { code: code.toLowerCase(), name, strategy, reason, parents, auxiliaryReasons };
 }
 
 function addTarget(targets, target) {
   const existing = targets.get(target.code);
   if (existing) {
     existing.reason = `${existing.reason}, ${target.reason}`;
+    existing.parents = [...new Set([...(existing.parents || []), ...(target.parents || [])])];
+    existing.auxiliaryReasons = [...new Set([...(existing.auxiliaryReasons || []), ...(target.auxiliaryReasons || [])])];
     return;
   }
   targets.set(target.code, target);
@@ -676,6 +725,8 @@ function selectAuxiliaryTargets(metadata, mainTargets, dataDir, options) {
         name: entry.name,
         strategy: 'all',
         reason,
+        parents: [...entry.parents],
+        auxiliaryReasons: [...entry.reasons],
       }));
     }
   }

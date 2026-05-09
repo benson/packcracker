@@ -124,6 +124,18 @@ test.describe('Collector Exclusive Filtering', () => {
     expect(hits).toEqual([]);
   });
 
+  test('EOS Collector-only Stellar Sights variants are not cached in play booster pools', async () => {
+    const eos = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'eos.json'), 'utf8'));
+    const playCollectorNumbers = new Set((eos.play || []).map(card => String(card.collector_number || '')));
+    const collectorCollectorNumbers = new Set((eos.collector || []).map(card => String(card.collector_number || '')));
+
+    expect(playCollectorNumbers.has('91')).toBe(false);
+    expect(playCollectorNumbers.has('136')).toBe(false);
+    expect([...playCollectorNumbers].every(cn => Number(cn) >= 1 && Number(cn) <= 45)).toBe(true);
+    expect(collectorCollectorNumbers.has('91')).toBe(true);
+    expect(collectorCollectorNumbers.has('136')).toBe(true);
+  });
+
   test('Extended art cards should NOT appear in play boosters', async ({ page }) => {
     // Navigate to a set and check that extended art cards are filtered out
     await page.goto('/?set=mkm&booster=play&min=2');
