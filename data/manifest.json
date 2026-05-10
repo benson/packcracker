@@ -1,17 +1,20 @@
 {
-  "updated": "2026-05-09T04:49:55.925Z",
+  "updated": "2026-05-10T10:41:25.148Z",
   "mode": "incremental",
-  "selected": 3,
-  "sets": 3,
+  "selected": 6,
+  "sets": 6,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
   "staleHours": 20,
-  "maxTargets": 20,
+  "maxTargets": 25,
   "refreshed": [
-    "eoe",
+    "msh",
+    "sos",
+    "tmt",
+    "ecl",
     "spg",
-    "eos"
+    "soa"
   ],
   "failed": []
 }
