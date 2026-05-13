@@ -28,13 +28,13 @@ const TEST_CARDS = {
   ],
 };
 
-// Special Guests that should appear when the toggle is enabled
-const SPECIAL_GUESTS = {
-  blb: [
-    { name: 'sylvan tutor', cn: '59', minPrice: 50 },
-    { name: 'sword of fire and ice', cn: '62', minPrice: 50 },
-  ],
-};
+function readCachedSet(setCode) {
+  return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', `${setCode}.json`), 'utf8'));
+}
+
+function cachedExtraNames(setCode) {
+  return new Set((readCachedSet(setCode).extras || []).map(card => String(card.name || '').toLowerCase()));
+}
 
 // Helper to wait for cards to finish loading
 async function waitForCardsLoaded(page) {
@@ -73,6 +73,11 @@ test.describe('Play Booster Card Visibility', () => {
 
 test.describe('Special Guests Toggle', () => {
   test('BLB Special Guests appear when toggle is enabled', async ({ page }) => {
+    const specialGuestNames = [...cachedExtraNames('blb')].filter(name =>
+      ['sylvan tutor', 'sword of fire and ice'].includes(name)
+    );
+    expect(specialGuestNames.length).toBeGreaterThan(0);
+
     // Navigate to BLB with Special Guests enabled (list=include)
     await page.goto('/?set=blb&booster=play&min=2&list=include');
 
@@ -80,8 +85,8 @@ test.describe('Special Guests Toggle', () => {
     await waitForCardsLoaded(page);
 
     // Check that Special Guests cards appear
-    for (const card of SPECIAL_GUESTS.blb) {
-      const cardElement = page.locator('.card-name', { hasText: card.name });
+    for (const name of specialGuestNames) {
+      const cardElement = page.locator('.card-name', { hasText: name });
       await expect(cardElement.first()).toBeVisible({
         timeout: 5000,
       });
@@ -89,6 +94,11 @@ test.describe('Special Guests Toggle', () => {
   });
 
   test('BLB Special Guests do NOT appear when toggle is disabled', async ({ page }) => {
+    const specialGuestNames = [...cachedExtraNames('blb')].filter(name =>
+      ['sylvan tutor', 'sword of fire and ice'].includes(name)
+    );
+    expect(specialGuestNames.length).toBeGreaterThan(0);
+
     // Navigate to BLB without Special Guests (list=exclude, the default)
     await page.goto('/?set=blb&booster=play&min=2&list=exclude');
 
@@ -96,10 +106,39 @@ test.describe('Special Guests Toggle', () => {
     await waitForCardsLoaded(page);
 
     // Check that Special Guests cards do NOT appear
-    for (const card of SPECIAL_GUESTS.blb) {
-      const cardElement = page.locator('.card-name', { hasText: card.name });
+    for (const name of specialGuestNames) {
+      const cardElement = page.locator('.card-name', { hasText: name });
       await expect(cardElement).toHaveCount(0);
     }
+  });
+});
+
+test.describe('MTGJSON Cache Shape', () => {
+  test('BLB cache stores MTGJSON UUIDs and per-finish odds', async () => {
+    const blb = readCachedSet('blb');
+    const maha = (blb.play || []).find(card => String(card.name || '').toLowerCase() === 'maha, its feathers night');
+    const sylvanTutor = (blb.extras || []).find(card => String(card.name || '').toLowerCase() === 'sylvan tutor');
+
+    expect(maha?.uuid).toBeTruthy();
+    expect(maha?.finishes?.some(finish => finish.packOdds > 0)).toBe(true);
+    expect(sylvanTutor?.uuid).toBeTruthy();
+    expect(sylvanTutor?.isExtra).toBe(true);
+    expect(sylvanTutor?.finishes?.some(finish => finish.packOdds > 0)).toBe(true);
+  });
+
+  test('cached EV inputs are nonzero for play, extras, and collector pools', async () => {
+    const blb = readCachedSet('blb');
+    const ev = (cards) => cards.reduce((sum, card) => {
+      return sum + (card.finishes || []).reduce((finishSum, finish) => {
+        const price = Number(finish.price || 0);
+        const odds = Number(finish.packOdds || 0);
+        return finishSum + (price * odds);
+      }, 0);
+    }, 0);
+
+    expect(ev(blb.play || [])).toBeGreaterThan(0);
+    expect(ev(blb.extras || [])).toBeGreaterThan(0);
+    expect(ev(blb.collector || [])).toBeGreaterThan(0);
   });
 });
 
@@ -170,10 +209,9 @@ test.describe('Collector Exclusive Filtering', () => {
   });
 
   // Regression test: cards with collector-exclusive treatments should be filtered
-  // even if their collector number falls within the play booster CN range
+  // even if a fallback data source would otherwise claim they were booster cards.
   test('ECL fracturefoil/inverted cards should NOT appear in play boosters', async ({ page }) => {
     // ECL (Lorwyn Eclipsed) has cards 400-401 which are fracturefoil/inverted variants
-    // These have booster:true in Scryfall but should NOT appear in play boosters
     await page.goto('/?set=ecl&booster=play&min=2');
 
     await waitForCardsLoaded(page);

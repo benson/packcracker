@@ -2,7 +2,7 @@ name: Cache Card Data
 
 on:
   schedule:
-    # Run after shared set metadata updates, away from other Scryfall-backed jobs.
+    # Run after homepage publishes MTGJSON-derived shared artifacts.
     - cron: '20 9 * * *'
   workflow_dispatch:
     inputs:
@@ -46,9 +46,9 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Cache card data from Scryfall
-        # Reads the set list from bensonperry.com/shared/sets.json (built by homepage's
-        # update-sets workflow). One source of truth, no drift, no local blacklist.
+      - name: Cache MTGJSON-backed card data
+        # Reads MTGJSON-derived set/booster artifacts from bensonperry.com/shared.
+        # Scryfall is used only for prices and card images.
         env:
           CACHE_MODE: ${{ github.event.inputs.mode || 'incremental' }}
           CACHE_SETS: ${{ github.event.inputs.sets || '' }}

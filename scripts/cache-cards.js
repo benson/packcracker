@@ -1,522 +1,320 @@
 #!/usr/bin/env node
 
 /**
- * Cache card data from Scryfall for all sets.
- * Run this script periodically via GitHub Actions to keep prices fresh.
+ * Cache price/display data for cards that MTGJSON says can appear in boosters.
+ * MTGJSON is the source of truth for pack membership and odds; Scryfall is used
+ * only for prices, image URLs, and card links.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const SCRYFALL_API = 'https://api.scryfall.com';
-const BOOSTER_DATA_URL = 'https://bensonperry.com/booster-data';
-const MIN_PRICE = 1; // Cache cards worth $1+
-const RATE_LIMIT_MS = 200; // Scryfall asks for 50-100ms between requests; keep a cushion for Actions.
+const SHARED_URL = 'https://bensonperry.com/shared';
+const MIN_CACHE_PRICE = Number(process.env.CACHE_MIN_PRICE || 0);
+const RATE_LIMIT_MS = 200;
 const DEFAULT_ACTIVE_RELEASE_DAYS = 120;
 const DEFAULT_UPCOMING_DAYS = 90;
 const DEFAULT_STALE_HOURS = 20;
 const DEFAULT_MAX_INCREMENTAL_TARGETS = 25;
-const SHARED_SETS_URL = 'https://bensonperry.com/shared/sets.json';
-const SHARED_METADATA_URL = 'https://bensonperry.com/shared/metadata.json';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const SCRYFALL_HEADERS = {
   Accept: 'application/json;q=0.9,*/*;q=0.8',
-  'User-Agent': 'packcracker-card-cache/1.0 (https://github.com/benson/packcracker)',
+  'User-Agent': 'packcracker-card-cache/2.0 (https://github.com/benson/packcracker)',
 };
+const WINDOWS_RESERVED_FILENAMES = new Set([
+  'con', 'prn', 'aux', 'nul',
+  'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
+  'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+]);
 
-// Jumpstart sets have their own booster type (no play/collector distinction)
-const JUMPSTART_SETS = new Set(['jmp', 'j22', 'j25']);
+const boosterModelCache = new Map();
+const scryfallCache = new Map();
 
-// Collector exclusives - fetched from shared config at runtime
-// Source of truth: https://bensonperry.com/shared/collector-exclusives.json
-let COLLECTOR_EXCLUSIVE_PROMOS = [];
-let COLLECTOR_EXCLUSIVE_FRAMES = [];
-
-// Booster data loaded from booster-data project
-let boosterIndex = {};
-let boosterFileCache = {};
-let scryfallSearchCache = new Map();
-
-async function loadCollectorExclusives() {
-  const localPath = path.join(__dirname, '..', '..', 'homepage', 'shared', 'collector-exclusives.json');
-  try {
-    if (fs.existsSync(localPath)) {
-      const data = JSON.parse(fs.readFileSync(localPath, 'utf8'));
-      COLLECTOR_EXCLUSIVE_PROMOS = data.promos;
-      COLLECTOR_EXCLUSIVE_FRAMES = data.frames;
-      console.log('Loaded collector exclusives from local shared config');
-      return;
-    }
-  } catch (error) {
-    // Fall through to remote
-  }
-
-  try {
-    const response = await fetch('https://bensonperry.com/shared/collector-exclusives.json');
-    const data = await response.json();
-    COLLECTOR_EXCLUSIVE_PROMOS = data.promos;
-    COLLECTOR_EXCLUSIVE_FRAMES = data.frames;
-    console.log('Loaded collector exclusives from shared config');
-  } catch (error) {
-    // Fallback to hardcoded values if fetch fails
-    console.warn('Failed to fetch collector exclusives, using fallback values');
-    COLLECTOR_EXCLUSIVE_PROMOS = [
-      'fracturefoil', 'texturedfoil', 'textured', 'ripplefoil',
-      'halofoil', 'confettifoil', 'galaxyfoil', 'surgefoil',
-      'raisedfoil', 'serialized', 'manafoil', 'invisibleink', 'neonink',
-      'headliner'
-    ];
-    COLLECTOR_EXCLUSIVE_FRAMES = ['inverted', 'extendedart'];
-  }
+function localSharedPath(...parts) {
+  return path.join(__dirname, '..', '..', 'homepage', 'shared', ...parts);
 }
 
-// Load booster data index
-async function loadBoosterIndex() {
-  // Try local file first (for development), then remote
-  const localPath = path.join(__dirname, '..', '..', 'booster-data', 'index.json');
-  try {
-    if (fs.existsSync(localPath)) {
-      boosterIndex = JSON.parse(fs.readFileSync(localPath, 'utf8'));
-      console.log(`Loaded booster index from local file for ${Object.keys(boosterIndex.boosters || {}).length} sets`);
-      return;
-    }
-  } catch (e) {
-    // Fall through to remote
-  }
-
-  try {
-    const response = await fetch(BOOSTER_DATA_URL + '/index.json');
-    boosterIndex = await response.json();
-    console.log(`Loaded booster index from remote for ${Object.keys(boosterIndex.boosters || {}).length} sets`);
-  } catch (e) {
-    console.log('Warning: Could not load booster index, using default rules');
-    boosterIndex = { boosters: {} };
-  }
+function boosterArtifactFileName(setCode) {
+  const code = String(setCode || '').toLowerCase();
+  return (WINDOWS_RESERVED_FILENAMES.has(code) ? `_${code}` : code) + '.json';
 }
 
-// Load a specific booster file
-async function loadBoosterFile(setCode, boosterType) {
-  const key = `${setCode}-${boosterType}`;
-  if (boosterFileCache[key]) return boosterFileCache[key];
-
-  // Try local file first
-  const localPath = path.join(__dirname, '..', '..', 'booster-data', 'boosters', `${key}.json`);
-  try {
-    if (fs.existsSync(localPath)) {
-      boosterFileCache[key] = JSON.parse(fs.readFileSync(localPath, 'utf8'));
-      return boosterFileCache[key];
-    }
-  } catch (e) {
-    // Fall through to remote
-  }
-
-  try {
-    const response = await fetch(`${BOOSTER_DATA_URL}/boosters/${key}.json`);
-    boosterFileCache[key] = await response.json();
-  } catch (e) {
-    boosterFileCache[key] = null;
-  }
-  return boosterFileCache[key];
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-// Get CN ranges from booster file for play boosters
-function getPlayBoosterRanges(boosterFile) {
-  if (!boosterFile?.slots) return null;
-  const ranges = [];
-  for (const slot of boosterFile.slots) {
-    if (!slot.pool || slot.bonusSet) continue;
-    for (const finishRanges of Object.values(slot.pool)) {
-      if (Array.isArray(finishRanges)) ranges.push(...finishRanges);
-    }
-  }
-  return [...new Set(ranges)];
-}
-
-// Get CN ranges from booster file for collector exclusives
-function getCollectorExclusiveRanges(boosterFile) {
-  if (!boosterFile?.slots) return null;
-  const ranges = [];
-  for (const slot of boosterFile.slots) {
-    if (slot.name === 'collectorExclusive' && slot.pool) {
-      for (const finishRanges of Object.values(slot.pool)) {
-        ranges.push(...finishRanges);
-      }
-    }
-  }
-  return ranges.length > 0 ? [...new Set(ranges)] : null;
-}
-
-function getBonusSheetRanges(boosterFile, bonusSetCode) {
-  if (!boosterFile?.slots) return null;
-  const ranges = [];
-  for (const slot of boosterFile.slots) {
-    if (slot.bonusSet !== bonusSetCode || !slot.pool) continue;
-    for (const finishRanges of Object.values(slot.pool)) {
-      if (Array.isArray(finishRanges)) ranges.push(...finishRanges);
-    }
-  }
-  return ranges.length > 0 ? [...new Set(ranges)] : null;
-}
-
-// Check if collector number is in a range like "262-281" or "342"
-function isInRange(cn, rangeStr) {
-  const cnText = String(cn ?? '').trim();
-  // Scryfall uses a "z" suffix for serialized variants of existing collector
-  // numbers (e.g. MKM 321z). Numeric booster ranges should not match those.
-  if (/^\d+z$/i.test(cnText)) return false;
-
-  const cnNum = parseInt(cnText, 10);
-  if (isNaN(cnNum)) return false;
-  if (rangeStr.includes('-')) {
-    const [start, end] = rangeStr.split('-').map(n => parseInt(n, 10));
-    return cnNum >= start && cnNum <= end;
-  }
-  return cnNum === parseInt(rangeStr, 10);
-}
-
-// Check if card is in play booster based on booster data
-async function isInPlayBoosterByConfig(card, setCode) {
-  if (hasCollectorExclusivePromo(card)) return false;
-
-  const types = boosterIndex.boosters?.[setCode];
-  if (!types) return null;
-
-  const playType = types.includes('play') ? 'play' : types.includes('draft') ? 'draft' : null;
-  if (!playType) return null;
-
-  const boosterFile = await loadBoosterFile(setCode, playType);
-  const ranges = getPlayBoosterRanges(boosterFile);
-  if (!ranges) return null;
-
-  const cn = card.collector_number;
-  return ranges.some(range => isInRange(cn, range));
-}
-
-// Check if card is collector-exclusive based on booster data
-async function isCollectorExclusiveByConfig(card, setCode) {
-  const types = boosterIndex.boosters?.[setCode];
-  if (!types || !types.includes('collector')) return null;
-
-  const boosterFile = await loadBoosterFile(setCode, 'collector');
-  const ranges = getCollectorExclusiveRanges(boosterFile);
-  if (!ranges) return null;
-
-  const cn = card.collector_number;
-  return ranges.some(range => isInRange(cn, range));
-}
-
-function hasCollectorExclusivePromo(card) {
-  const promos = card.promo_types || [];
-  return promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p));
-}
-
-// Check if card is collector-exclusive using generic rules
-function isCollectorExclusive(card) {
-  const promos = card.promo_types || [];
-  const frames = card.frame_effects || [];
-  return promos.some(p => COLLECTOR_EXCLUSIVE_PROMOS.includes(p)) ||
-         frames.some(f => COLLECTOR_EXCLUSIVE_FRAMES.includes(f));
-}
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function getRetryDelayMs(response, attempt) {
   const retryAfter = response.headers?.get('retry-after');
   if (retryAfter) {
     const seconds = Number(retryAfter);
     if (!Number.isNaN(seconds)) return seconds * 1000;
-
     const dateMs = Date.parse(retryAfter);
     if (!Number.isNaN(dateMs)) return Math.max(dateMs - Date.now(), RATE_LIMIT_MS);
   }
-
   return Math.min(2000 * attempt, 30000);
 }
 
-async function fetchWithRetry(url, retries = 6) {
+async function fetchWithRetry(url, retries = 6, options = {}) {
   let lastError = null;
-
   for (let i = 0; i < retries; i++) {
     const attempt = i + 1;
     try {
-      const response = await fetch(url, { headers: SCRYFALL_HEADERS });
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...SCRYFALL_HEADERS,
+          ...(options.headers || {}),
+        },
+      });
       if (response.status === 429) {
         lastError = new Error(`HTTP 429 after ${attempt} attempt(s)`);
         if (attempt >= retries) break;
-
         const waitMs = getRetryDelayMs(response, attempt);
         console.log(`  Rate limited, waiting ${Math.ceil(waitMs / 1000)}s...`);
         await delay(waitMs);
         continue;
       }
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return await response.json();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
     } catch (error) {
       lastError = error;
       if (attempt >= retries) break;
       await delay(500 * attempt);
     }
   }
-
   throw lastError || new Error(`Failed to fetch ${url}`);
 }
 
-async function fetchScryfallSearch(url) {
-  if (scryfallSearchCache.has(url)) {
-    return scryfallSearchCache.get(url);
-  }
-
-  const fetchPromise = (async () => {
-    let allCards = [];
-    let nextUrl = url;
-
-    while (nextUrl) {
-      await delay(RATE_LIMIT_MS);
-      const data = await fetchWithRetry(nextUrl);
-      allCards = allCards.concat(data.data || []);
-      nextUrl = data.has_more ? data.next_page : null;
-
-      // Limit to first 2 pages (350 cards) to keep files reasonable
-      if (allCards.length >= 350) break;
-    }
-
-    return allCards;
-  })();
-
-  scryfallSearchCache.set(url, fetchPromise);
-
-  try {
-    const cards = await fetchPromise;
-    scryfallSearchCache.set(url, cards);
-    return cards;
-  } catch (error) {
-    scryfallSearchCache.delete(url);
-    throw error;
-  }
-}
-
-async function fetchSetCards(setCode, boosterType) {
-  const hasBoosterData = boosterIndex.boosters?.[setCode];
-
-  let query = `set:${setCode} lang:en`;
-
-  // If we have booster data, fetch all cards and filter client-side
-  // Otherwise use Scryfall's is:booster filter
-  if (!hasBoosterData && boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode)) {
-    query += ' is:booster -is:boosterfun';
-    COLLECTOR_EXCLUSIVE_PROMOS.forEach(promo => {
-      query += ` -promo:${promo}`;
-    });
-  }
-
-  // Fetch cards worth $0.50+ to have some buffer
-  query += ` (usd>=0.5 OR usd_foil>=0.5)`;
-
-  const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
-
-  let allCards = [];
-
-  try {
-    allCards = await fetchScryfallSearch(url);
-  } catch (error) {
-    if (error.message === 'HTTP 404') {
-      return []; // No cards match - that's fine
-    }
-    throw error;
-  }
-
-  // If we have booster data, filter for play boosters client-side
-  if (hasBoosterData && boosterType !== 'collector') {
-    const filteredCards = [];
-    for (const card of allCards) {
-      const inPlayBooster = await isInPlayBoosterByConfig(card, setCode);
-      if (inPlayBooster === true) {
-        // Trust booster-data ranges as source of truth
-        filteredCards.push(card);
-        continue;
-      }
-      const inCollectorExclusive = await isCollectorExclusiveByConfig(card, setCode);
-      if (inCollectorExclusive === true) continue;
-      // Fall back to Scryfall booster flag and generic rules
-      if (card.booster && !isCollectorExclusive(card)) {
-        filteredCards.push(card);
-      }
-    }
-    return filteredCards;
-  }
-
-  return allCards;
-}
-
-async function fetchAllPricedCards(setCode) {
-  const query = `set:${setCode} lang:en (usd>=0.5 OR usd_foil>=0.5)`;
-  const url = `${SCRYFALL_API}/cards/search?q=${encodeURIComponent(query)}&unique=prints&order=usd&dir=desc`;
-
-  try {
-    return await fetchScryfallSearch(url);
-  } catch (error) {
-    if (error.message === 'HTTP 404') {
-      return [];
-    }
-    throw error;
-  }
-}
-
-function processCard(card) {
-  // Extract only the fields we need to minimize file size
-  const prices = card.prices || {};
-  const finishes = card.finishes || [];
-
-  const result = {
-    id: card.id,
-    name: card.name,
-    set: card.set,
-    collector_number: card.collector_number,
-    rarity: card.rarity,
-    booster: card.booster,
-    image: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || '',
-    uri: card.scryfall_uri,
-    finishes: [],
-    // Treatment detection
-    showcase: card.frame_effects?.includes('showcase') || false,
-    extendedart: card.frame_effects?.includes('extendedart') || false,
-    inverted: card.frame_effects?.includes('inverted') || false,
-    borderless: card.border_color === 'borderless',
-    fullart: card.full_art || false,
-    etched: card.frame_effects?.includes('etched') || false,
-    promo: card.promo || false,
-    // Store promo_types for client-side filtering (important for new sets)
-    promo_types: card.promo_types || [],
-  };
-
-  // Add available finishes with prices
-  if (finishes.includes('nonfoil') && prices.usd) {
-    result.finishes.push({ type: 'nonfoil', price: parseFloat(prices.usd) });
-  }
-  if (finishes.includes('foil') && prices.usd_foil) {
-    result.finishes.push({ type: 'foil', price: parseFloat(prices.usd_foil) });
-  }
-  if (finishes.includes('etched') && prices.usd_etched) {
-    result.finishes.push({ type: 'etched', price: parseFloat(prices.usd_etched) });
-  }
-
-  // Only include cards with at least one finish worth $0.50+
-  if (result.finishes.some(f => f.price >= 0.5)) {
-    return result;
-  }
-  return null;
-}
-
-function buildCacheData(set, playCards, collectorCards) {
-  const seenIds = new Set();
-  const processedPlay = [];
-  const processedCollector = [];
-
-  for (const card of playCards) {
-    const processed = processCard(card);
-    if (processed && !seenIds.has(processed.id)) {
-      seenIds.add(processed.id);
-      processedPlay.push(processed);
-    }
-  }
-
-  for (const card of collectorCards) {
-    const processed = processCard(card);
-    if (processed && !seenIds.has(processed.id)) {
-      seenIds.add(processed.id);
-      processedCollector.push(processed);
-    }
-  }
-
-  // Collector includes all play cards plus collector-only cards
-  const allCollector = [...processedPlay, ...processedCollector];
-
-  const cacheData = {
-    set: set.code,
-    name: set.name,
-    updated: new Date().toISOString(),
-    play: processedPlay,
-    collector: allCollector,
-  };
-
-  console.log(`  Play: ${processedPlay.length} cards, Collector: ${allCollector.length} cards`);
-
-  return cacheData;
-}
-
-async function cacheMainSet(set) {
-  // Fetch booster types sequentially so the scheduled job stays inside Scryfall's rate limits.
-  const playCards = await fetchSetCards(set.code, 'play');
-  const collectorCards = await fetchSetCards(set.code, 'collector');
-  return buildCacheData(set, playCards, collectorCards);
-}
-
-async function cacheAuxiliarySet(set) {
-  const cards = await fetchAllPricedCards(set.code);
-
-  if (set.auxiliaryReasons?.includes('bonus-sheet')) {
-    const playRanges = await getParentBonusSheetRanges(set, 'play');
-    const collectorRanges = await getParentBonusSheetRanges(set, 'collector');
-
-    if (playRanges.length > 0 || collectorRanges.length > 0) {
-      const playCards = playRanges.length > 0
-        ? cards.filter(card => playRanges.some(range => isInRange(card.collector_number, range)))
-        : [];
-      const collectorCards = collectorRanges.length > 0
-        ? cards.filter(card => collectorRanges.some(range => isInRange(card.collector_number, range)))
-        : cards;
-
-      return buildCacheData(set, playCards, collectorCards);
-    }
-  }
-
-  return buildCacheData(set, cards, cards);
-}
-
-async function getParentBonusSheetRanges(set, boosterType) {
-  const ranges = [];
-  for (const parentCode of set.parents || []) {
-    const types = boosterIndex.boosters?.[parentCode];
-    if (!types) continue;
-
-    const parentBoosterType = boosterType === 'play'
-      ? types.includes('play') ? 'play' : types.includes('draft') ? 'draft' : null
-      : types.includes('collector') ? 'collector' : null;
-    if (!parentBoosterType) continue;
-
-    const boosterFile = await loadBoosterFile(parentCode, parentBoosterType);
-    const bonusRanges = getBonusSheetRanges(boosterFile, set.code);
-    if (bonusRanges) ranges.push(...bonusRanges);
-  }
-  return [...new Set(ranges)];
-}
-
-async function cacheTarget(target) {
-  console.log(`Caching ${target.code} (${target.name}) [${target.reason}]...`);
-  return target.strategy === 'all'
-    ? cacheAuxiliarySet(target)
-    : cacheMainSet(target);
+function readLocalJson(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 async function loadSets() {
-  const res = await fetch(SHARED_SETS_URL);
-  if (!res.ok) throw new Error(`Failed to fetch ${SHARED_SETS_URL}: HTTP ${res.status}`);
+  const local = readLocalJson(localSharedPath('sets.json'));
+  if (local) return local;
+  const res = await fetch(`${SHARED_URL}/sets.json`);
+  if (!res.ok) throw new Error(`Failed to fetch shared sets.json: HTTP ${res.status}`);
   return res.json();
 }
 
-async function loadMetadata() {
+async function loadBoosterModel(setCode) {
+  const code = String(setCode || '').toLowerCase();
+  if (boosterModelCache.has(code)) return boosterModelCache.get(code);
+
+  const fileName = boosterArtifactFileName(code);
+  const local = readLocalJson(localSharedPath('boosters', fileName));
+  if (local) {
+    boosterModelCache.set(code, local);
+    return local;
+  }
+
   try {
-    const res = await fetch(SHARED_METADATA_URL);
+    const res = await fetch(`${SHARED_URL}/boosters/${fileName}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return data?.sets || {};
+    boosterModelCache.set(code, data);
+    return data;
   } catch (error) {
-    console.warn(`Warning: could not load shared metadata: ${error.message}`);
-    return {};
+    boosterModelCache.set(code, null);
+    return null;
   }
+}
+
+function resolveActualBoosterType(model, boosterType) {
+  return model?.appBoosterMap?.[boosterType] || (model?.boosters?.[boosterType] ? boosterType : null);
+}
+
+function sheetEntries(sheet) {
+  return Object.entries(sheet.cards || {})
+    .map(([uuid, weight]) => ({ uuid, weight: Number(weight || 0) }))
+    .filter(entry => entry.weight > 0);
+}
+
+function isExtraSheet(model, actualType, sheetName) {
+  return Boolean(model.extraSheetsByBoosterType?.[actualType]?.[sheetName]);
+}
+
+function calculateBoosterOdds(model, boosterType) {
+  const actualType = resolveActualBoosterType(model, boosterType);
+  const config = actualType ? model.boosters?.[actualType] : null;
+  const expected = {};
+  if (!model || !config) return { actualType: null, cards: expected };
+
+  for (const variant of config.boosters || []) {
+    const variantOdds = config.boostersTotalWeight
+      ? Number(variant.weight || 0) / config.boostersTotalWeight
+      : 0;
+
+    for (const [sheetName, count] of Object.entries(variant.contents || {})) {
+      const sheet = config.sheets?.[sheetName];
+      if (!sheet) continue;
+      const entries = sheetEntries(sheet);
+      const total = sheet.totalWeight || entries.reduce((sum, entry) => sum + entry.weight, 0);
+      if (total <= 0) continue;
+
+      const finish = sheet.foil ? 'foil' : 'nonfoil';
+      const extra = isExtraSheet(model, actualType, sheetName);
+
+      for (const entry of entries) {
+        const copies = variantOdds * Number(count || 0) * (entry.weight / total);
+        if (!expected[entry.uuid]) {
+          expected[entry.uuid] = {
+            uuid: entry.uuid,
+            card: model.cards?.[entry.uuid] || null,
+            finishes: {},
+            expectedCopies: 0,
+            isExtra: false,
+            sheetNames: [],
+          };
+        }
+        expected[entry.uuid].expectedCopies += copies;
+        expected[entry.uuid].finishes[finish] = (expected[entry.uuid].finishes[finish] || 0) + copies;
+        expected[entry.uuid].isExtra = expected[entry.uuid].isExtra || extra;
+        if (!expected[entry.uuid].sheetNames.includes(sheetName)) expected[entry.uuid].sheetNames.push(sheetName);
+      }
+    }
+  }
+
+  return { actualType, cards: expected };
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+}
+
+async function fetchScryfallCollection(ids) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const missing = unique.filter(id => !scryfallCache.has(id));
+
+  for (const chunk of chunkArray(missing, 75)) {
+    if (chunk.length === 0) continue;
+    await delay(RATE_LIMIT_MS);
+    const data = await fetchWithRetry(`${SCRYFALL_API}/cards/collection`, 6, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifiers: chunk.map(id => ({ id })) }),
+    });
+    for (const card of data.data || []) scryfallCache.set(card.id, card);
+    for (const notFound of data.not_found || []) {
+      if (notFound.id) scryfallCache.set(notFound.id, null);
+    }
+  }
+
+  return Object.fromEntries(unique.map(id => [id, scryfallCache.get(id) || null]));
+}
+
+function processCard(scryfallCard, mtgjsonCard, oddsEntry) {
+  if (!scryfallCard || !mtgjsonCard || !oddsEntry) return null;
+
+  const prices = scryfallCard.prices || {};
+  const finishes = scryfallCard.finishes || [];
+  const finishRows = [];
+
+  const finishConfig = [
+    { type: 'nonfoil', priceKey: 'usd', oddsKey: 'nonfoil' },
+    { type: 'foil', priceKey: 'usd_foil', oddsKey: 'foil' },
+    { type: 'etched', priceKey: 'usd_etched', oddsKey: 'etched' },
+  ];
+
+  for (const finish of finishConfig) {
+    const packOdds = oddsEntry.finishes[finish.oddsKey] || 0;
+    const price = Number(prices[finish.priceKey] || 0);
+    if (!finishes.includes(finish.type)) continue;
+    if (packOdds <= 0) continue;
+    if (price <= 0) continue;
+    if (price < MIN_CACHE_PRICE) continue;
+    finishRows.push({ type: finish.type, price, packOdds });
+  }
+
+  if (finishRows.length === 0) return null;
+
+  return {
+    id: scryfallCard.id,
+    uuid: mtgjsonCard.uuid,
+    name: scryfallCard.name,
+    set: scryfallCard.set,
+    collector_number: scryfallCard.collector_number,
+    rarity: scryfallCard.rarity,
+    booster: true,
+    image: scryfallCard.image_uris?.normal || scryfallCard.card_faces?.[0]?.image_uris?.normal || '',
+    uri: scryfallCard.scryfall_uri,
+    finishes: finishRows,
+    showcase: scryfallCard.frame_effects?.includes('showcase') || false,
+    extendedart: scryfallCard.frame_effects?.includes('extendedart') || false,
+    inverted: scryfallCard.frame_effects?.includes('inverted') || false,
+    borderless: scryfallCard.border_color === 'borderless',
+    fullart: scryfallCard.full_art || false,
+    etched: scryfallCard.frame_effects?.includes('etched') || false,
+    promo: scryfallCard.promo || false,
+    promo_types: scryfallCard.promo_types || [],
+    packOdds: oddsEntry.expectedCopies,
+    isExtra: oddsEntry.isExtra,
+    sheetNames: oddsEntry.sheetNames,
+  };
+}
+
+function dedupeCards(cards) {
+  const best = new Map();
+  for (const card of cards.filter(Boolean)) {
+    const key = card.id;
+    const existing = best.get(key);
+    if (!existing || card.packOdds > existing.packOdds) best.set(key, card);
+  }
+  return [...best.values()].sort((a, b) => {
+    const aMax = Math.max(...a.finishes.map(f => f.price));
+    const bMax = Math.max(...b.finishes.map(f => f.price));
+    return bMax - aMax;
+  });
+}
+
+async function buildCardsForOdds(odds, scryfallById) {
+  const cards = [];
+  for (const entry of Object.values(odds.cards)) {
+    const mtgjsonCard = entry.card;
+    const scryfallId = mtgjsonCard?.identifiers?.scryfallId;
+    cards.push(processCard(scryfallById[scryfallId], mtgjsonCard, entry));
+  }
+  return dedupeCards(cards);
+}
+
+async function cacheSet(set) {
+  console.log(`Caching ${set.code} (${set.name})...`);
+  const model = await loadBoosterModel(set.code);
+  if (!model) throw new Error(`missing MTGJSON booster model for ${set.code}`);
+
+  const playOdds = model.appBoosterMap?.play ? calculateBoosterOdds(model, 'play') : { cards: {} };
+  const collectorOdds = model.appBoosterMap?.collector ? calculateBoosterOdds(model, 'collector') : { cards: {} };
+
+  const ids = [];
+  for (const odds of [playOdds, collectorOdds]) {
+    for (const entry of Object.values(odds.cards)) {
+      const id = entry.card?.identifiers?.scryfallId;
+      if (id) ids.push(id);
+    }
+  }
+
+  const scryfallById = await fetchScryfallCollection(ids);
+  const allPlay = await buildCardsForOdds(playOdds, scryfallById);
+  const play = allPlay.filter(card => !card.isExtra);
+  const extras = allPlay.filter(card => card.isExtra);
+  const collector = await buildCardsForOdds(collectorOdds, scryfallById);
+
+  console.log(`  Play: ${play.length}, extras: ${extras.length}, collector: ${collector.length}`);
+
+  return {
+    set: set.code,
+    name: set.name,
+    updated: new Date().toISOString(),
+    source: 'mtgjson+scryfall',
+    play,
+    extras,
+    collector: collector.length > 0 ? collector : [...play, ...extras],
+  };
 }
 
 function splitCodes(value) {
@@ -544,56 +342,37 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--full') {
-      options.mode = 'full';
-    } else if (arg === '--dry-run') {
-      options.dryRun = true;
-    } else if (arg === '--mode' && argv[i + 1]) {
-      options.mode = argv[++i].toLowerCase();
-    } else if (arg.startsWith('--mode=')) {
-      options.mode = arg.slice('--mode='.length).toLowerCase();
-    } else if ((arg === '--set' || arg === '--sets') && argv[i + 1]) {
-      options.setCodes.push(...splitCodes(argv[++i]));
-    } else if (arg.startsWith('--set=')) {
-      options.setCodes.push(...splitCodes(arg.slice('--set='.length)));
-    } else if (arg.startsWith('--sets=')) {
-      options.setCodes.push(...splitCodes(arg.slice('--sets='.length)));
-    } else if (arg === '--active-release-days' && argv[i + 1]) {
-      options.activeReleaseDays = parseNumber(argv[++i], options.activeReleaseDays);
-    } else if (arg.startsWith('--active-release-days=')) {
-      options.activeReleaseDays = parseNumber(arg.slice('--active-release-days='.length), options.activeReleaseDays);
-    } else if (arg === '--upcoming-days' && argv[i + 1]) {
-      options.upcomingDays = parseNumber(argv[++i], options.upcomingDays);
-    } else if (arg.startsWith('--upcoming-days=')) {
-      options.upcomingDays = parseNumber(arg.slice('--upcoming-days='.length), options.upcomingDays);
-    } else if (arg === '--stale-hours' && argv[i + 1]) {
-      options.staleHours = parseNumber(argv[++i], options.staleHours);
-    } else if (arg.startsWith('--stale-hours=')) {
-      options.staleHours = parseNumber(arg.slice('--stale-hours='.length), options.staleHours);
-    } else if (arg === '--max-targets' && argv[i + 1]) {
-      options.maxTargets = parseNumber(argv[++i], options.maxTargets);
-    } else if (arg.startsWith('--max-targets=')) {
-      options.maxTargets = parseNumber(arg.slice('--max-targets='.length), options.maxTargets);
-    }
+    if (arg === '--full') options.mode = 'full';
+    else if (arg === '--dry-run') options.dryRun = true;
+    else if (arg === '--mode' && argv[i + 1]) options.mode = argv[++i].toLowerCase();
+    else if (arg.startsWith('--mode=')) options.mode = arg.slice('--mode='.length).toLowerCase();
+    else if ((arg === '--set' || arg === '--sets') && argv[i + 1]) options.setCodes.push(...splitCodes(argv[++i]));
+    else if (arg.startsWith('--set=')) options.setCodes.push(...splitCodes(arg.slice('--set='.length)));
+    else if (arg.startsWith('--sets=')) options.setCodes.push(...splitCodes(arg.slice('--sets='.length)));
+    else if (arg === '--active-release-days' && argv[i + 1]) options.activeReleaseDays = parseNumber(argv[++i], options.activeReleaseDays);
+    else if (arg.startsWith('--active-release-days=')) options.activeReleaseDays = parseNumber(arg.slice('--active-release-days='.length), options.activeReleaseDays);
+    else if (arg === '--upcoming-days' && argv[i + 1]) options.upcomingDays = parseNumber(argv[++i], options.upcomingDays);
+    else if (arg.startsWith('--upcoming-days=')) options.upcomingDays = parseNumber(arg.slice('--upcoming-days='.length), options.upcomingDays);
+    else if (arg === '--stale-hours' && argv[i + 1]) options.staleHours = parseNumber(argv[++i], options.staleHours);
+    else if (arg.startsWith('--stale-hours=')) options.staleHours = parseNumber(arg.slice('--stale-hours='.length), options.staleHours);
+    else if (arg === '--max-targets' && argv[i + 1]) options.maxTargets = parseNumber(argv[++i], options.maxTargets);
+    else if (arg.startsWith('--max-targets=')) options.maxTargets = parseNumber(arg.slice('--max-targets='.length), options.maxTargets);
   }
 
   options.setCodes = [...new Set(options.setCodes)];
-
-  if (options.mode !== 'incremental' && options.mode !== 'full') {
+  if (!['incremental', 'full'].includes(options.mode)) {
     throw new Error(`Unknown cache mode "${options.mode}". Use "incremental" or "full".`);
   }
-
   return options;
 }
 
 function readCacheInfo(dataDir, code) {
   const filePath = path.join(dataDir, `${code}.json`);
   if (!fs.existsSync(filePath)) return { exists: false, updated: null };
-
   try {
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     return { exists: true, updated: data.updated || null };
-  } catch (error) {
+  } catch {
     return { exists: true, updated: null };
   }
 }
@@ -608,162 +387,43 @@ function isStale(cacheInfo, now, staleHours) {
 function releaseWindowReason(set, now, options) {
   const releasedMs = Date.parse(set.released);
   if (Number.isNaN(releasedMs)) return null;
-
   const daysFromRelease = (now - releasedMs) / DAY_MS;
-  if (daysFromRelease < 0 && Math.abs(daysFromRelease) <= options.upcomingDays) {
-    return 'upcoming';
-  }
-  if (daysFromRelease >= 0 && daysFromRelease <= options.activeReleaseDays) {
-    return 'active-release-window';
-  }
+  if (daysFromRelease < 0 && Math.abs(daysFromRelease) <= options.upcomingDays) return 'upcoming';
+  if (daysFromRelease >= 0 && daysFromRelease <= options.activeReleaseDays) return 'active-release-window';
   return null;
 }
 
-function makeTarget({ code, name, strategy = 'booster', reason, parents = [], auxiliaryReasons = [] }) {
-  return { code: code.toLowerCase(), name, strategy, reason, parents, auxiliaryReasons };
-}
-
-function addTarget(targets, target) {
-  const existing = targets.get(target.code);
-  if (existing) {
-    existing.reason = `${existing.reason}, ${target.reason}`;
-    existing.parents = [...new Set([...(existing.parents || []), ...(target.parents || [])])];
-    existing.auxiliaryReasons = [...new Set([...(existing.auxiliaryReasons || []), ...(target.auxiliaryReasons || [])])];
-    return;
-  }
-  targets.set(target.code, target);
-}
-
-function selectMainTargets(sets, dataDir, options, now) {
+function selectTargets(sets, dataDir, options, now) {
   const explicit = new Set(options.setCodes);
-  const targets = new Map();
+  const targets = [];
 
   for (const set of sets) {
     const code = set.code.toLowerCase();
+    if (!set.boosterTypes?.includes('play') && !set.boosterTypes?.includes('collector')) continue;
+    if (explicit.size > 0 && !explicit.has(code)) continue;
     const cacheInfo = readCacheInfo(dataDir, code);
-    const explicitlySelected = explicit.has(code);
 
-    if (options.mode === 'full') {
-      addTarget(targets, makeTarget({ ...set, reason: 'full-refresh' }));
-      continue;
-    }
-
-    if (explicitlySelected) {
-      addTarget(targets, makeTarget({ ...set, reason: 'manual-set' }));
-      continue;
-    }
-
-    if (!cacheInfo.exists) {
-      addTarget(targets, makeTarget({ ...set, reason: 'missing-cache' }));
-      continue;
-    }
-
-    const windowReason = releaseWindowReason(set, now, options);
-    if (windowReason && isStale(cacheInfo, now, options.staleHours)) {
-      addTarget(targets, makeTarget({ ...set, reason: windowReason }));
+    if (options.mode === 'full') targets.push({ ...set, reason: explicit.has(code) ? 'manual-full-refresh' : 'full-refresh' });
+    else if (explicit.has(code)) targets.push({ ...set, reason: 'manual-set' });
+    else if (!cacheInfo.exists) targets.push({ ...set, reason: 'missing-cache' });
+    else {
+      const reason = releaseWindowReason(set, now, options);
+      if (reason && isStale(cacheInfo, now, options.staleHours)) targets.push({ ...set, reason });
     }
   }
 
   return targets;
-}
-
-function buildAuxiliaryIndex(metadata) {
-  const auxiliary = new Map();
-
-  function remember(code, name, parentCode, reason) {
-    const normalized = code.toLowerCase();
-    if (!auxiliary.has(normalized)) {
-      auxiliary.set(normalized, {
-        code: normalized,
-        name,
-        parents: new Set(),
-        reasons: new Set(),
-      });
-    }
-    const entry = auxiliary.get(normalized);
-    entry.parents.add(parentCode);
-    entry.reasons.add(reason);
-  }
-
-  for (const [parentCode, meta] of Object.entries(metadata || {})) {
-    if (meta.specialGuests) {
-      remember('spg', 'Special Guests', parentCode, 'special-guests');
-    }
-    if (meta.hasBigScore) {
-      remember('big', 'The Big Score', parentCode, 'big-score');
-    }
-    if (meta.bonusSheet) {
-      remember(meta.bonusSheet, `${meta.bonusSheet.toUpperCase()} bonus sheet`, parentCode, 'bonus-sheet');
-    }
-  }
-
-  return auxiliary;
-}
-
-function selectAuxiliaryTargets(metadata, mainTargets, dataDir, options) {
-  const explicit = new Set(options.setCodes);
-  const selectedMainCodes = new Set(mainTargets.keys());
-  const auxiliary = buildAuxiliaryIndex(metadata);
-  const targets = new Map();
-
-  for (const entry of auxiliary.values()) {
-    const parentSelected = [...entry.parents].some(parent => selectedMainCodes.has(parent));
-    const explicitlySelected = explicit.has(entry.code);
-    const cacheInfo = readCacheInfo(dataDir, entry.code);
-
-    if (options.mode === 'full' || parentSelected || explicitlySelected || !cacheInfo.exists) {
-      const reason = options.mode === 'full'
-        ? 'full-refresh'
-        : [
-            parentSelected && `paired-with-${[...entry.parents].filter(parent => selectedMainCodes.has(parent)).join('+')}`,
-            explicitlySelected && 'manual-set',
-            !cacheInfo.exists && 'missing-cache',
-          ].filter(Boolean).join(', ');
-
-      addTarget(targets, makeTarget({
-        code: entry.code,
-        name: entry.name,
-        strategy: 'all',
-        reason,
-        parents: [...entry.parents],
-        auxiliaryReasons: [...entry.reasons],
-      }));
-    }
-  }
-
-  return targets;
-}
-
-function combineTargets(...targetMaps) {
-  const combined = new Map();
-  for (const targetMap of targetMaps) {
-    for (const target of targetMap.values()) {
-      addTarget(combined, target);
-    }
-  }
-  return [...combined.values()];
 }
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-
-  // Load shared configs
-  await loadCollectorExclusives();
-  await loadBoosterIndex();
-
   const dataDir = path.join(__dirname, '..', 'data');
-
-  // Source of truth: bensonperry.com/shared/sets.json (built by homepage/scripts/update-sets.js
-  // from Scryfall + booster-data index). One list, no drift.
   const sets = await loadSets();
-  const metadata = await loadMetadata();
   const now = Date.now();
-  const mainTargets = selectMainTargets(sets, dataDir, options, now);
-  const auxiliaryTargets = selectAuxiliaryTargets(metadata, mainTargets, dataDir, options);
-  const targets = combineTargets(mainTargets, auxiliaryTargets);
+  const targets = selectTargets(sets, dataDir, options, now);
 
   console.log(`Cache mode: ${options.mode}`);
-  console.log(`Found ${sets.length} main sets; selected ${mainTargets.size} main and ${auxiliaryTargets.size} auxiliary target(s).`);
+  console.log(`Found ${sets.length} MTGJSON-backed set(s); selected ${targets.length} target(s).`);
   if (options.mode === 'incremental') {
     console.log(`Window: ${options.activeReleaseDays} days back, ${options.upcomingDays} days forward, stale after ${options.staleHours} hours.`);
     console.log(`Circuit breaker: max ${options.maxTargets || 'unlimited'} incremental target(s).`);
@@ -787,42 +447,23 @@ async function main() {
     return;
   }
 
-  // Process targets in batches to avoid overwhelming Scryfall
-  const BATCH_SIZE = 5;
   let processed = 0;
-  let errors = [];
+  const errors = [];
 
-  for (let i = 0; i < targets.length; i += BATCH_SIZE) {
-    const batch = targets.slice(i, i + BATCH_SIZE);
-
-    for (const target of batch) {
-      try {
-        const cacheData = await cacheTarget(target);
-        const filePath = path.join(dataDir, `${target.code}.json`);
-        fs.writeFileSync(filePath, JSON.stringify(cacheData));
-        processed++;
-      } catch (error) {
-        console.error(`  Error caching ${target.code}: ${error.message}`);
-        errors.push({ set: target.code, error: error.message });
-      }
-    }
-
-    // Longer pause between batches
-    if (i + BATCH_SIZE < targets.length) {
-      console.log(`\nPausing between batches... (${processed}/${targets.length} done)\n`);
-      await delay(1000);
+  for (const target of targets) {
+    try {
+      const cacheData = await cacheSet(target);
+      fs.writeFileSync(path.join(dataDir, `${target.code}.json`), JSON.stringify(cacheData));
+      processed++;
+    } catch (error) {
+      console.error(`  Error caching ${target.code}: ${error.message}`);
+      errors.push({ set: target.code, error: error.message });
     }
   }
 
-  console.log(`\nDone! Cached ${processed} target(s).`);
-  if (errors.length > 0) {
-    console.log(`Errors: ${errors.length}`);
-    errors.forEach(e => console.log(`  - ${e.set}: ${e.error}`));
-  }
-
-  // Write a manifest file with last update time
   const manifest = {
     updated: new Date().toISOString(),
+    source: 'mtgjson+scryfall',
     mode: options.mode,
     selected: targets.length,
     sets: processed,
@@ -831,20 +472,19 @@ async function main() {
     upcomingDays: options.upcomingDays,
     staleHours: options.staleHours,
     maxTargets: options.maxTargets,
-    refreshed: targets
-      .filter(target => !errors.some(error => error.set === target.code))
-      .map(target => target.code),
+    refreshed: targets.filter(target => !errors.some(error => error.set === target.code)).map(target => target.code),
     failed: errors,
   };
   fs.writeFileSync(path.join(dataDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
+  console.log(`\nDone! Cached ${processed} target(s).`);
   if (errors.length > 0) {
     console.error(`\nFailing run: ${errors.length} set(s) errored. Refusing to publish a partial cache.`);
     process.exit(1);
   }
 }
 
-main().catch(err => {
-  console.error(err);
+main().catch(error => {
+  console.error(error);
   process.exit(1);
 });

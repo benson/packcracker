@@ -2,34 +2,16 @@
 import {
   fetchSets,
   createSetAutocomplete,
-  delay,
   fetchWithRetry,
   COLLECTOR_BOOSTER_START,
   PLAY_BOOSTER_START,
   FOIL_START,
   JUMPSTART_SETS,
   DRAFT_ONLY_SETS,
-  SPECIAL_GUESTS_RANGES,
-  SETS_WITH_BIG_SCORE,
-  SETS_WITH_SPECIAL_GUESTS,
-  BONUS_SHEET_SETS,
-  loadBoosterIndex,
-  fetchSetConfig,
-  isInPlayBooster,
+  fetchSetCards as fetchMtgjsonCards,
 } from 'https://bensonperry.com/shared/mtg.js';
 
-// Sets where retro frame cards appear in Play Boosters (not collector-exclusive)
-// TODO: Import from mtg.js once deployed
-const SETS_WITH_RETRO_IN_BOOSTERS = new Set(['mh3']);
-
 const SCRYFALL_API = 'https://api.scryfall.com';
-
-// Play Booster pull rates for EV calculation
-// Source: https://magic.wizards.com/en/news/feature/play-booster-contents
-const RARE_RATE = 0.875;       // ~87.5% chance of rare in rare/mythic slot
-const MYTHIC_RATE = 0.125;     // ~12.5% chance of mythic (roughly 7:1 ratio)
-const FOIL_RARE_RATE = 0.10;   // ~10% chance of foil rare across pack
-const FOIL_MYTHIC_RATE = 0.02; // ~2% chance of foil mythic across pack
 
 // ============ URL State Management ============
 
@@ -159,6 +141,26 @@ function getBoosterEra(releaseDate) {
 function updateBoosterTypeOptions(releaseDate, setCode, preserveValue = null) {
   const boosterToggle = document.getElementById('booster-toggle');
   const boosterHidden = document.getElementById('booster-type');
+  const setInfo = setsData.find(s => s.code === setCode);
+  const boosterTypes = setInfo?.boosterTypes || [];
+
+  if (boosterTypes.length > 0) {
+    const buttons = [];
+    const defaultValue = boosterTypes.includes(preserveValue) ? preserveValue : (setInfo.defaultBoosterType || boosterTypes[0]);
+
+    if (boosterTypes.includes('play')) {
+      const label = setInfo.limitedLabel || 'play';
+      buttons.push('<button type="button" class="toggle-btn' + (defaultValue === 'play' ? ' active' : '') + '" data-value="play">' + label + '</button>');
+    }
+    if (boosterTypes.includes('collector')) {
+      buttons.push('<button type="button" class="toggle-btn' + (defaultValue === 'collector' ? ' active' : '') + '" data-value="collector">collector</button>');
+    }
+
+    boosterToggle.innerHTML = buttons.join('');
+    boosterToggle.classList.toggle('single', buttons.length <= 1);
+    boosterHidden.value = defaultValue;
+    return;
+  }
 
   // Jumpstart sets have their own booster type
   if (JUMPSTART_SETS.has(setCode)) {
@@ -209,20 +211,14 @@ function updateFilterToggles(setCode, releaseDate) {
   const foilsToggleGroup = document.getElementById('foils-toggle').closest('.select-group');
   const foilsHidden = document.getElementById('foils-mode');
 
-  // Check what this set has
-  const hasSpecialGuests = SETS_WITH_SPECIAL_GUESTS.has(setCode);
-  const hasBigScore = SETS_WITH_BIG_SCORE.has(setCode);
+  const setInfo = setsData.find(s => s.code === setCode);
+  const extraSheetLabel = setInfo?.extraSheetLabel;
   const hasFoils = releaseDate >= FOIL_START;
 
-  // Update Special Guests toggle (only for sets we can accurately query)
-  if (hasSpecialGuests) {
+  // Update The List / Special Guests toggle from MTGJSON sheet metadata.
+  if (extraSheetLabel) {
     listToggleGroup.classList.remove('hidden');
-    // Update label based on what's available
-    if (hasBigScore) {
-      listLabel.textContent = 'the big score / special guests';
-    } else {
-      listLabel.textContent = 'special guests';
-    }
+    listLabel.textContent = extraSheetLabel;
   } else {
     listToggleGroup.classList.add('hidden');
     listHidden.value = 'exclude';
@@ -244,21 +240,13 @@ function updateFilterToggles(setCode, releaseDate) {
 // Try to load from cache first, fall back to live API
 async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   let cards = [];
-  let loadedFromCache = false;
 
   // Try cached data first
   try {
-    const cached = await fetchCachedCards(setCode, boosterType);
+    const cached = await fetchCachedCards(setCode, boosterType, includeSpecialGuests);
     if (cached && cached.length > 0) {
       console.log('Loaded ' + cached.length + ' cards from cache for ' + setCode);
       cards = cached;
-      loadedFromCache = true;
-
-      // If includeSpecialGuests, also get cached Special Guests cards
-      if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
-        const specialGuestsCards = await fetchCachedSpecialGuestsCards(setCode);
-        cards = [...cards, ...specialGuestsCards];
-      }
     }
   } catch (e) {
     console.log('Cache miss for ' + setCode + ', fetching live...');
@@ -267,22 +255,6 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   // Fall back to live API if no cache
   if (cards.length === 0) {
     cards = await fetchLiveCards(setCode, boosterType, includeSpecialGuests);
-  }
-
-  // Always fetch bonus sheet cards (like Avatar source material)
-  if (BONUS_SHEET_SETS[setCode]) {
-    let bonusCards = await fetchCachedBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
-    if (bonusCards.length === 0) {
-      bonusCards = await fetchBonusSheetCards(BONUS_SHEET_SETS[setCode], boosterType);
-    }
-    cards = [...cards, ...bonusCards];
-  }
-
-  // Cached set files already include retro-frame cards. Only use the live retro
-  // fallback when the main set cache missed and we are already using the API.
-  if (!loadedFromCache && SETS_WITH_RETRO_IN_BOOSTERS.has(setCode)) {
-    const retroCards = await fetchRetroFrameCards(setCode);
-    cards = [...cards, ...retroCards];
   }
 
   return cards;
@@ -300,6 +272,10 @@ function convertCachedCard(card) {
     image_uris: { normal: card.image },
     scryfall_uri: card.uri,
     finishes: card.finishes.map(f => f.type),
+    _finishOdds: Object.fromEntries((card.finishes || []).map(f => [f.type, f.packOdds || 0])),
+    _packOdds: card.packOdds || 0,
+    _mtgjsonUuid: card.uuid || null,
+    _isExtra: card.isExtra || false,
     prices: {
       usd: card.finishes.find(f => f.type === 'nonfoil')?.price?.toString() || null,
       usd_foil: card.finishes.find(f => f.type === 'foil')?.price?.toString() || null,
@@ -319,182 +295,40 @@ function convertCachedCard(card) {
 }
 
 // Fetch from pre-cached JSON files
-async function fetchCachedCards(setCode, boosterType) {
+async function fetchCachedCards(setCode, boosterType, includeExtras = false) {
   const response = await fetch('./data/' + setCode + '.json');
   if (!response.ok) return null;
 
   const data = await response.json();
-  const cards = boosterType === 'collector' ? data.collector : data.play;
+  const cards = boosterType === 'collector'
+    ? (data.collector || [])
+    : [
+        ...(data.play || []),
+        ...(includeExtras ? (data.extras || []) : [])
+      ];
 
   return cards.map(convertCachedCard);
 }
 
-// Fetch cached Special Guests cards for a specific set
-async function fetchCachedSpecialGuestsCards(setCode) {
-  const cards = [];
-  const range = SPECIAL_GUESTS_RANGES[setCode];
-
-  // Try to fetch from spg cache file
-  try {
-    const response = await fetch('./data/spg.json');
-    if (response.ok) {
-      const data = await response.json();
-      const allCards = data.collector || data.play || [];
-
-      // Filter to only cards in this set's collector number range
-      const filtered = allCards.filter(card => {
-        const cn = parseInt(card.collector_number || '0');
-        return cn >= range[0] && cn <= range[1];
-      });
-
-      cards.push(...filtered.map(convertCachedCard));
-    }
-  } catch (e) {
-    // Ignore missing cache files
-  }
-
-  // For OTJ, also fetch The Big Score
-  if (SETS_WITH_BIG_SCORE.has(setCode)) {
-    try {
-      const response = await fetch('./data/big.json');
-      if (response.ok) {
-        const data = await response.json();
-        const bigScoreCards = data.collector || data.play || [];
-        cards.push(...bigScoreCards.map(convertCachedCard));
-      }
-    } catch (e) {
-      // Ignore missing cache files
-    }
-  }
-
-  return cards;
-}
-
-async function fetchCachedBonusSheetCards(bonusSetCode, boosterType) {
-  try {
-    const cards = await fetchCachedCards(bonusSetCode, boosterType);
-    return (cards || []).map(card => ({ ...card, _fromBonusSheet: true }));
-  } catch (e) {
-    return [];
-  }
-}
-
 // Live fetch from Scryfall API
 async function fetchLiveCards(setCode, boosterType, includeSpecialGuests) {
-  let query = 'set:' + setCode + ' lang:en';
-  let useBoosterData = false;
-
-  // Jumpstart and draft-only sets don't use is:booster filter
-  if (boosterType !== 'collector' && !JUMPSTART_SETS.has(setCode) && !DRAFT_ONLY_SETS.has(setCode)) {
-    // Check if we have booster-data for this set (more reliable than Scryfall's
-    // is:booster flag, which isn't populated until after release)
-    const index = await loadBoosterIndex();
-    const types = index.boosters[setCode];
-    if (types) {
-      useBoosterData = true;
-    } else {
-      query += ' is:booster';
-    }
+  try {
+    return await fetchMtgjsonCards(setCode, boosterType, {
+      minPrice: 0,
+      includeSpecialGuests,
+    });
+  } catch (error) {
+    console.warn('MTGJSON live fetch failed, falling back to Scryfall search:', error.message);
   }
 
-  // Fetch all cards with any meaningful price (for accurate EV calculation)
-  query += ' (usd>=0.5 OR usd_foil>=0.5)';
-
+  const query = 'set:' + setCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
   const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
-
-  let cards = [];
   try {
     const data = await fetchWithRetry(url);
-    cards = data.data;
+    return data.data || [];
   } catch (error) {
-    if (error.message !== 'HTTP 404') throw error;
-  }
-
-  // When using booster-data, filter play booster cards by CN ranges
-  if (useBoosterData && boosterType !== 'collector') {
-    const setConfig = await fetchSetConfig(setCode);
-    if (setConfig) {
-      cards = cards.filter(card => isInPlayBooster(card, setConfig));
-    }
-  }
-
-  if (includeSpecialGuests && SETS_WITH_SPECIAL_GUESTS.has(setCode)) {
-    const specialGuestsCards = await fetchLiveSpecialGuestsCards(setCode);
-    cards = cards.concat(specialGuestsCards);
-  }
-
-  return cards;
-}
-
-// Live fetch for Special Guests (and Big Score for OTJ)
-async function fetchLiveSpecialGuestsCards(setCode) {
-  let allCards = [];
-
-  // Fetch Special Guests by collector number range
-  const range = SPECIAL_GUESTS_RANGES[setCode];
-  if (range) {
-    try {
-      const query = 'set:spg cn>=' + range[0] + ' cn<=' + range[1] + ' (usd>=0.5 OR usd_foil>=0.5)';
-      const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
-      const data = await fetchWithRetry(url);
-      allCards = allCards.concat(data.data || []);
-    } catch (error) {
-      // Ignore 404s (no matching cards)
-    }
-  }
-
-  // For OTJ, also fetch The Big Score cards
-  if (SETS_WITH_BIG_SCORE.has(setCode)) {
-    try {
-      const query = 'set:big (usd>=0.5 OR usd_foil>=0.5)';
-      const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
-      const data = await fetchWithRetry(url);
-      allCards = allCards.concat(data.data || []);
-    } catch (error) {
-      // Ignore 404s
-    }
-  }
-
-  return allCards;
-}
-
-// Fetch retro frame and full art cards for sets where they appear in Play Boosters
-// Scryfall marks these as booster:false but they DO appear in play boosters
-async function fetchRetroFrameCards(setCode) {
-  try {
-    const query = 'set:' + setCode + ' (frame:old OR is:full) lang:en (usd>=0.5 OR usd_foil>=0.5)';
-    const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
-    const data = await fetchWithRetry(url);
-    let cards = data.data || [];
-    // Mark as retro so they skip collector-exclusive filter
-    cards = cards.map(card => ({ ...card, _fromRetroSheet: true }));
-    return cards;
-  } catch (error) {
-    return [];
-  }
-}
-
-// Fetch bonus sheet cards (e.g., source material cards from TLE, MAR)
-// These are manually curated via BONUS_SHEET_SETS - we know they appear in play boosters
-// per WotC product info, even if Scryfall's booster flag is unreliable for these sets.
-// We also skip the collector-exclusive filter since these sets use their own styling.
-async function fetchBonusSheetCards(bonusSetCode, boosterType) {
-  try {
-    // Don't use is:booster filter - Scryfall's booster flag is unreliable for bonus sheets
-    // (e.g., MAR cards have booster:false but DO appear in Spider-Man Play Boosters)
-    const query = 'set:' + bonusSetCode + ' lang:en (usd>=0.5 OR usd_foil>=0.5)';
-
-    const url = SCRYFALL_API + '/cards/search?q=' + encodeURIComponent(query) + '&unique=prints&order=usd&dir=desc';
-    const data = await fetchWithRetry(url);
-    let cards = data.data || [];
-
-    // Mark these as bonus sheet cards so they skip the unified filter
-    cards = cards.map(card => ({ ...card, _fromBonusSheet: true }));
-
-    return cards;
-  } catch (error) {
-    // Ignore 404s
-    return [];
+    if (error.message === 'HTTP 404') return [];
+    throw error;
   }
 }
 
@@ -512,6 +346,8 @@ function getCardTreatment(card, isFoil) {
   // Mark list/special guests cards
   if (card.set === 'plst') treatments.push('The List');
   if (card.set === 'spg') treatments.push('Special Guest');
+  if (card.set === 'big') treatments.push('The Big Score');
+  if (card._isExtra && card.set !== 'plst' && card.set !== 'spg' && card.set !== 'big') treatments.push('Extra Sheet');
 
   return treatments.length > 0 ? treatments.join(', ') : 'Regular';
 }
@@ -536,7 +372,8 @@ function expandCardFinishes(cards) {
         if (price > 0) {
           let treatment = getCardTreatment(card, finish.isFoil);
           if (finish.transformTreatment) treatment = finish.transformTreatment(treatment);
-          expanded.push({ ...card, price, isFoil: finish.isFoil, treatment, finishKey: finish.key });
+          const packOdds = card._finishOdds?.[finish.key] || card._packOdds || 0;
+          expanded.push({ ...card, price, isFoil: finish.isFoil, treatment, finishKey: finish.key, packOdds });
         }
       }
     }
@@ -593,43 +430,10 @@ function filterAndSortCards(cards, minPrice, excludeRares, excludeFoils) {
   return Array.from(grouped.values()).sort((a, b) => b.maxPrice - a.maxPrice);
 }
 
-// Calculate expected value of opening a pack
-// Based on pull rates for the rare/mythic slot (main source of value)
+// Calculate expected value of opening a pack from MTGJSON-derived per-finish odds.
 function calculatePackEV(cards) {
-  // Expand all finishes first (we need all versions for EV calculation)
   const expanded = expandCardFinishes(cards);
-
-  // Group by rarity and separate foil/non-foil
-  const nonFoilRares = expanded.filter(c => c.rarity === 'rare' && !c.isFoil);
-  const nonFoilMythics = expanded.filter(c => c.rarity === 'mythic' && !c.isFoil);
-  const foilRares = expanded.filter(c => c.rarity === 'rare' && c.isFoil);
-  const foilMythics = expanded.filter(c => c.rarity === 'mythic' && c.isFoil);
-
-  // Count unique cards per rarity (for probability calculation)
-  const uniqueRares = new Set(nonFoilRares.map(c => c.id)).size || 1;
-  const uniqueMythics = new Set(nonFoilMythics.map(c => c.id)).size || 1;
-  const uniqueFoilRares = new Set(foilRares.map(c => c.id)).size || 1;
-  const uniqueFoilMythics = new Set(foilMythics.map(c => c.id)).size || 1;
-
-  // Calculate EV for rare/mythic slot (non-foil)
-  let ev = 0;
-
-  for (const card of nonFoilRares) {
-    ev += card.price * (RARE_RATE / uniqueRares);
-  }
-  for (const card of nonFoilMythics) {
-    ev += card.price * (MYTHIC_RATE / uniqueMythics);
-  }
-
-  // Foil slot contribution
-  for (const card of foilRares) {
-    ev += card.price * (FOIL_RARE_RATE / uniqueFoilRares);
-  }
-  for (const card of foilMythics) {
-    ev += card.price * (FOIL_MYTHIC_RATE / uniqueFoilMythics);
-  }
-
-  return ev;
+  return expanded.reduce((ev, card) => ev + (card.price * (card.packOdds || 0)), 0);
 }
 
 // ============ Rendering ============
