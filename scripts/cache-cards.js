@@ -38,7 +38,7 @@ function localSharedPath(...parts) {
 
 function boosterArtifactFileName(setCode) {
   const code = String(setCode || '').toLowerCase();
-  return (WINDOWS_RESERVED_FILENAMES.has(code) ? `_${code}` : code) + '.json';
+  return (WINDOWS_RESERVED_FILENAMES.has(code) ? `${code}_` : code) + '.json';
 }
 
 function delay(ms) {
