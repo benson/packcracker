@@ -1,20 +1,31 @@
 {
-  "updated": "2026-05-13T11:37:52.855Z",
+  "updated": "2026-05-16T10:42:24.495Z",
+  "source": "mtgjson+scryfall",
   "mode": "incremental",
-  "selected": 6,
-  "sets": 6,
+  "selected": 16,
+  "sets": 16,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
   "staleHours": 20,
   "maxTargets": 25,
   "refreshed": [
-    "msh",
     "sos",
     "tmt",
     "ecl",
-    "spg",
-    "soa"
+    "pip",
+    "who",
+    "30a",
+    "ss3",
+    "ss2",
+    "ss1",
+    "s99",
+    "ptk",
+    "p02",
+    "por",
+    "rin",
+    "ren",
+    "sum"
   ],
   "failed": []
 }
