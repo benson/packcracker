@@ -1,9 +1,9 @@
 {
-  "updated": "2026-05-16T10:42:24.495Z",
+  "updated": "2026-05-17T10:43:26.472Z",
   "source": "mtgjson+scryfall",
   "mode": "incremental",
-  "selected": 16,
-  "sets": 16,
+  "selected": 3,
+  "sets": 3,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
@@ -12,20 +12,7 @@
   "refreshed": [
     "sos",
     "tmt",
-    "ecl",
-    "pip",
-    "who",
-    "30a",
-    "ss3",
-    "ss2",
-    "ss1",
-    "s99",
-    "ptk",
-    "p02",
-    "por",
-    "rin",
-    "ren",
-    "sum"
+    "ecl"
   ],
   "failed": []
 }
