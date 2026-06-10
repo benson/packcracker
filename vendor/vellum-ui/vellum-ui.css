@@ -757,6 +757,70 @@ input[type='range']:focus-visible {
   text-transform: none;
 }
 
+/* Edge resize — drag-only panel resizing (js/edgeResize.js). The divider is a
+   thin hit strip on a panel edge; the grip is the dotted affordance marking a
+   draggable edge (shown on collapsed edges and drag handles). */
+.vui-resize-divider {
+  position: absolute;
+  touch-action: none;
+  user-select: none;
+  z-index: 6;
+}
+.vui-resize-divider-x {
+  cursor: col-resize;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+}
+.vui-resize-divider-y {
+  cursor: row-resize;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+.vui-resize-divider::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: transparent;
+  transition: background var(--vui-motion-fast) ease;
+}
+.vui-resize-divider-x::after {
+  width: var(--vui-border-width);
+}
+.vui-resize-divider-y::after {
+  height: var(--vui-border-width);
+}
+.vui-resize-divider:hover::after,
+.vui-resize-divider:focus-visible::after {
+  background: var(--vui-color-line-focus);
+}
+.vui-resize-divider:focus-visible {
+  outline: var(--vui-focus-ring);
+  outline-offset: -2px;
+}
+
+.vui-resize-grip {
+  display: inline-block;
+  background: repeating-linear-gradient(
+    var(--vui-grip-angle, 0deg),
+    var(--vui-color-text-muted) 0 1.5px,
+    transparent 1.5px 4px
+  );
+  opacity: 0.65;
+}
+.vui-resize-grip-x {
+  --vui-grip-angle: 90deg;
+  width: 5px;
+  height: 16px;
+}
+.vui-resize-grip-y {
+  --vui-grip-angle: 0deg;
+  width: 16px;
+  height: 5px;
+}
+
 
 /* overlays.css */
 .ui-modal {
