@@ -8,6 +8,7 @@ import {
   JUMPSTART_SETS,
   DRAFT_ONLY_SETS,
   fetchSetCards as fetchMtgjsonCards,
+  calculateBoosterExpectedValues,
 } from 'https://bensonperry.com/shared/mtg.js';
 import { combobox } from './vendor/vellum-ui/combobox.js';
 import { mountFeedbackCapture } from './vendor/vellum-ui/feedbackCapture.js';
@@ -264,9 +265,38 @@ async function fetchSetCards(setCode, boosterType, includeSpecialGuests) {
   // Fall back to live API if no cache
   if (cards.length === 0) {
     cards = await fetchLiveCards(setCode, boosterType, includeSpecialGuests);
+  } else {
+    await backfillPackOdds(cards, setCode, boosterType);
   }
 
   return cards;
+}
+
+// Older cached JSON predates per-finish pack odds, which zeroes out pack EV.
+// Backfill odds from the shared MTGJSON booster config (one small fetch, no
+// Scryfall), matching cards by Scryfall id.
+async function backfillPackOdds(cards, setCode, boosterType) {
+  const hasOdds = card =>
+    (card._packOdds || 0) > 0 ||
+    Object.values(card._finishOdds || {}).some(odds => odds > 0);
+  if (cards.some(hasOdds)) return;
+
+  try {
+    const odds = await calculateBoosterExpectedValues(setCode, boosterType);
+    const byScryfallId = new Map();
+    for (const entry of Object.values(odds.cards || {})) {
+      const sid = entry.card?.identifiers?.scryfallId;
+      if (sid) byScryfallId.set(sid, entry);
+    }
+    for (const card of cards) {
+      const entry = byScryfallId.get(card.id);
+      if (!entry) continue;
+      card._finishOdds = { ...entry.finishes };
+      card._packOdds = entry.expectedCopies || 0;
+    }
+  } catch (error) {
+    console.warn('pack odds backfill failed for ' + setCode + ':', error.message);
+  }
 }
 
 // Convert cached card format back to Scryfall-like format
@@ -470,6 +500,11 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
   const tcgUrl = setInfo ? getTcgPlayerUrl(setInfo.name, boosterType) : null;
   const tcgLink = tcgUrl ? '<a href="' + tcgUrl + '" target="_blank" class="tcg-link">buy on tcgplayer</a>' : '';
 
+  // Display pack EV with TCGPlayer link; never show a false $0.00
+  const evFigure = packEV > 0 ? '~$' + packEV.toFixed(2) : '—';
+  evEl.innerHTML = '<span class="ev-label">pack ev</span><span class="ev-value">' + evFigure + '</span> ' + tcgLink;
+  evEl.classList.remove('hidden');
+
   if (cards.length === 0) {
     grid.innerHTML =
       '<div class="no-results">' +
@@ -477,22 +512,11 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
         '<p>try lowering the minimum price or switching booster type</p>' +
       '</div>';
     countEl.classList.add('hidden');
-    // Still show EV even if no cards match current filters
-    if (packEV > 0) {
-      evEl.innerHTML = 'pack ev: <span class="ev-value">~$' + packEV.toFixed(2) + '</span> ' + tcgLink;
-      evEl.classList.remove('hidden');
-    } else {
-      evEl.classList.add('hidden');
-    }
     return;
   }
 
   countEl.textContent = 'showing ' + cards.length + ' card' + (cards.length === 1 ? '' : 's');
   countEl.classList.remove('hidden');
-
-  // Display pack EV with TCGPlayer link
-  evEl.innerHTML = 'pack ev: <span class="ev-value">~$' + packEV.toFixed(2) + '</span> ' + tcgLink;
-  evEl.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
     const imageUrl = card.image_uris?.normal ||
@@ -504,19 +528,21 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
     let treatment = card.treatment.toLowerCase().replace(/, ?foil$/i, '').replace(/^foil, ?/i, '').replace(/^foil$/i, '');
     if (!treatment || treatment === 'regular') treatment = '';
 
-    // Build price display with treatment inline
+    // Price-first caption: prices on their own line (highest first, in full
+    // text color), treatment demoted to a faint third line
     const priceItems = card.finishPrices
-      .map(f => '<span class="finish-price"><span class="finish-type">' + f.type + '</span> $' + f.price.toFixed(2) + '</span>');
+      .map(f => '<span class="finish-price"><span class="finish-amount">$' + f.price.toFixed(2) + '</span> <span class="finish-type">' + f.type + '</span></span>');
 
-    const priceDisplay = treatment
-      ? '<span class="card-treatment">' + treatment + '</span> · ' + priceItems.join(' · ')
-      : priceItems.join(' · ');
+    const treatmentLine = treatment
+      ? '<div class="card-treatment">' + treatment + '</div>'
+      : '';
 
     return '<div class="card" data-url="' + scryfallUrl + '">' +
-      '<img class="card-image" src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" />' +
+      '<div class="card-image"><img class="card-img" src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" /></div>' +
       '<div class="card-info">' +
         '<div class="card-name" title="' + card.name + '">' + card.name.toLowerCase() + '</div>' +
-        '<div class="card-prices">' + priceDisplay + '</div>' +
+        '<div class="card-prices">' + priceItems.join(' · ') + '</div>' +
+        treatmentLine +
       '</div>' +
     '</div>';
   }).join('');
@@ -527,6 +553,15 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
       window.open(card.dataset.url, '_blank');
     });
   });
+
+  // Fade each image in as it loads (cached images show immediately)
+  grid.querySelectorAll('.card-img').forEach(img => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('loaded');
+    } else {
+      img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+    }
+  });
 }
 
 function setLoading(loading) {
@@ -534,7 +569,10 @@ function setLoading(loading) {
   document.getElementById('card-grid').classList.toggle('hidden', loading);
   if (loading) {
     document.getElementById('card-count').classList.add('hidden');
-    document.getElementById('pack-ev').classList.add('hidden');
+    // EV placeholder while computing — never a plausible-but-false $0.00
+    const evEl = document.getElementById('pack-ev');
+    evEl.innerHTML = '<span class="ev-label">pack ev</span><span class="ev-value">—</span>';
+    evEl.classList.remove('hidden');
   }
 }
 
