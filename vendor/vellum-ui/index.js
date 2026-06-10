@@ -1,6 +1,7 @@
 export { attrs, esc } from './escape.js';
 export { clearNode, el } from './dom.js';
 export { buttonHtml, fieldRowHtml } from './controlPrimitives.js';
+export { defaultSnapClosedAt, edgeResize, resolveEdgeDrag } from './edgeResize.js';
 export { outsideClick } from './outsideClick.js';
 export { popover } from './popover.js';
 export { floatingMenu, moveFloatingMenuFocus } from './floatingMenu.js';
