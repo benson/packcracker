@@ -1,7 +1,6 @@
 // Pack Cracker - MTG Booster Value Guide
 import {
   fetchSets,
-  createSetAutocomplete,
   fetchWithRetry,
   COLLECTOR_BOOSTER_START,
   PLAY_BOOSTER_START,
@@ -10,8 +9,18 @@ import {
   DRAFT_ONLY_SETS,
   fetchSetCards as fetchMtgjsonCards,
 } from 'https://bensonperry.com/shared/mtg.js';
+import { combobox } from './vendor/vellum-ui/combobox.js';
+import { mountFeedbackCapture } from './vendor/vellum-ui/feedbackCapture.js';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
+
+// Owner feedback: files to the packcracker Linear project via the biblioplex
+// worker. Only mounts on machines holding the owner key (?feedback-key=<key>).
+mountFeedbackCapture({
+  requireOwnerKey: true,
+  project: 'packcracker',
+  apiUrl: 'https://biblioplex-api.bensonperry.com',
+});
 
 // ============ URL State Management ============
 
@@ -57,7 +66,7 @@ function getCurrentState() {
 // ============ State ============
 
 let setsData = [];
-let autocomplete = null;
+let selectedSetDisplay = '';
 
 // ============ Toggle Buttons ============
 
@@ -589,7 +598,6 @@ function onFilterChange() {
 
 async function init() {
   const setInput = document.getElementById('set-input');
-  const setDropdown = document.getElementById('set-dropdown');
   const setHidden = document.getElementById('set-select');
 
   try {
@@ -597,14 +605,8 @@ async function init() {
     const cutoff = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     setsData = (await fetchSets()).filter(s => s.released <= cutoff);
 
-    // Set up autocomplete using shared module
-    autocomplete = createSetAutocomplete({
-      inputEl: setInput,
-      dropdownEl: setDropdown,
-      hiddenEl: setHidden,
-      sets: setsData,
-      onSelect: handleSetSelect
-    });
+    // Set search via vellum combobox
+    setupSetCombobox(setInput, setHidden);
 
     setupToggles();
     setInput.disabled = false;
@@ -620,8 +622,8 @@ async function init() {
       if (foundSet) initialSet = foundSet;
     }
 
-    // Set initial value using autocomplete
-    autocomplete.setInitialSet(initialSet);
+    // Set initial value
+    applySetSelection(initialSet);
 
     // Set booster type options based on set era, then apply URL value
     updateBoosterTypeOptions(initialSet.released, initialSet.code, urlState.booster);
@@ -642,6 +644,50 @@ async function init() {
     console.error('Error initializing:', error);
     showError('failed to load sets. please refresh the page.');
   }
+}
+
+function formatSetDisplay(set) {
+  return set.name.toLowerCase() + ' (' + set.released.slice(0, 4) + ')';
+}
+
+function applySetSelection(set) {
+  selectedSetDisplay = formatSetDisplay(set);
+  const setInput = document.getElementById('set-input');
+  const setHidden = document.getElementById('set-select');
+  setInput.value = selectedSetDisplay;
+  setHidden.value = set.code;
+}
+
+function setupSetCombobox(setInput, setHidden) {
+  // Stash the chosen set's display text and clear on focus so the list opens
+  // unfiltered. Registered before combobox() so its focus refresh sees the
+  // cleared value.
+  setInput.addEventListener('focus', () => {
+    if (setInput.value) selectedSetDisplay = setInput.value;
+    setInput.value = '';
+  });
+  setInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!setInput.value && selectedSetDisplay) setInput.value = selectedSetDisplay;
+    }, 150);
+  });
+  combobox(setInput, {
+    getItems: query => {
+      const filter = query.toLowerCase();
+      return setsData.filter(
+        s => s.name.toLowerCase().includes(filter) || s.code.toLowerCase().includes(filter)
+      );
+    },
+    onSelect: set => {
+      applySetSelection(set);
+      setInput.blur();
+      handleSetSelect(set);
+    },
+    toLabel: set => set.name.toLowerCase(),
+    toHint: set => '(' + set.released.slice(0, 4) + ')',
+    toDataset: set => ({ code: set.code }),
+    maxItems: 200,
+  });
 }
 
 function handleSetSelect(set) {

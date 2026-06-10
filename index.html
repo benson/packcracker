@@ -21,7 +21,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=5">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="https://bensonperry.com/shared/common.css">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="vendor/vellum-ui/vellum-ui.css?v=e8189bd98ec4">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div class="container">
@@ -36,11 +37,10 @@
     <div class="controls">
       <div class="select-group">
         <label for="set-input">set</label>
-        <div class="autocomplete-wrapper">
+        <div class="autocomplete-wrapper combobox">
           <input type="text" id="set-input" placeholder="loading..." disabled autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <div id="set-dropdown" class="autocomplete-dropdown hidden"></div>
+          <input type="hidden" id="set-select">
         </div>
-        <input type="hidden" id="set-select">
         <div id="pack-ev" class="pack-ev hidden"></div>
       </div>
 

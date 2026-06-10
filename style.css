@@ -180,38 +180,47 @@ select:disabled {
   text-transform: lowercase;
 }
 
-.autocomplete-dropdown {
-  position: absolute;
+/* Vellum combobox list, reskinned to the local minimal look */
+.autocomplete-wrapper.combobox {
+  display: block;
+}
+
+.autocomplete-wrapper .combobox-list {
   top: 100%;
-  left: 0;
   right: 0;
   max-height: 300px;
-  overflow-y: auto;
+  gap: 0;
+  padding: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   border-top: none;
+  border-radius: 0;
+  box-shadow: none;
   z-index: 100;
 }
 
-.autocomplete-dropdown .option {
-  padding: 10px 8px;
-  cursor: pointer;
+.autocomplete-wrapper .combobox-option {
+  font-family: inherit;
   font-size: 0.9rem;
+  justify-content: flex-start;
+  padding: 10px 8px;
+  border-radius: 0;
   border-bottom: 1px solid var(--border-faint);
+  color: var(--text);
 }
 
-.autocomplete-dropdown .option:last-child {
+.autocomplete-wrapper .combobox-option:last-child {
   border-bottom: none;
 }
 
-.autocomplete-dropdown .option:hover,
-.autocomplete-dropdown .option.highlighted {
+.autocomplete-wrapper .combobox-option:hover,
+.autocomplete-wrapper .combobox-option.is-active {
   background: var(--bg-alt);
 }
 
-.autocomplete-dropdown .option .year {
+.autocomplete-wrapper .combobox-option-hint {
   color: var(--text-faint);
-  margin-left: 4px;
+  font-size: 0.9rem;
 }
 
 /* checkbox styling */

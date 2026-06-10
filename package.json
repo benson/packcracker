@@ -6,7 +6,8 @@
   "scripts": {
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
-    "serve": "npx serve -l 3000"
+    "serve": "npx serve -l 3000",
+    "sync:ui": "node scripts/sync-ui.mjs"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,8 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "serve": "^14.2.5"
+  },
+  "dependencies": {
+    "@benson/vellum-ui": "git+https://github.com/benson/vellum-ui.git#e8189bd98ec47b74c62bdab29db8d2e88cd91cf5"
   }
 }
