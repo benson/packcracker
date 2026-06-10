@@ -173,6 +173,10 @@
   --vui-space-4: 16px;
   --vui-space-5: 20px;
 
+  /* Ink for text on warn/gold surfaces — fixed in BOTH themes so gold
+     buttons stay legible in dark (BEN-560). */
+  --vui-color-on-warn: #15100d;
+
   /* Vellum convenience aliases */
   --vui-control-height: 34px;
   --vui-space-6: 24px;
@@ -352,25 +356,25 @@ body.vui-app {
   background-size:
     6px 6px,
     auto;
-  color: var(--vui-color-text-strong);
+  color: var(--vui-color-on-warn);
 }
 
 .btn:hover:not(:disabled),
-.ds-force-hover .btn:not(:disabled) {
+.ds-force-hover .ds-zoom-stage .btn:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 var(--vui-color-shadow);
   filter: brightness(1.05);
 }
 
 .btn:active:not(:disabled),
-.ds-force-active .btn:not(:disabled) {
+.ds-force-active .ds-zoom-stage .btn:not(:disabled) {
   transform: translate(4px, 4px);
   box-shadow: 0 0 0 var(--vui-color-shadow);
   filter: brightness(0.94);
 }
 
 .btn:focus-visible,
-.ds-force-focus .btn {
+.ds-force-focus .ds-zoom-stage .btn:not(:disabled) {
   outline: var(--vui-focus-ring);
   outline-offset: var(--vui-focus-ring-offset);
 }
@@ -391,7 +395,7 @@ body.vui-app {
 }
 
 .btn-secondary:hover:not(:disabled),
-.ds-force-hover .btn-secondary:not(:disabled) {
+.ds-force-hover .ds-zoom-stage .btn-secondary:not(:disabled) {
   filter: brightness(1.05);
 }
 
@@ -402,7 +406,7 @@ body.vui-app {
 }
 
 .btn-danger:hover:not(:disabled),
-.ds-force-hover .btn-danger:not(:disabled) {
+.ds-force-hover .ds-zoom-stage .btn-danger:not(:disabled) {
   color: var(--vui-color-text-inverse);
 }
 
@@ -412,7 +416,7 @@ body.vui-app {
 }
 
 .btn-ink:hover:not(:disabled),
-.ds-force-hover .btn-ink:not(:disabled) {
+.ds-force-hover .ds-zoom-stage .btn-ink:not(:disabled) {
   filter: brightness(1.25);
 }
 
@@ -521,7 +525,7 @@ body.vui-app {
 }
 
 .segment-btn:hover:not(.active),
-.ds-force-hover .segment-btn:not(.active) {
+.ds-force-hover .ds-zoom-stage .segment-btn:not(.active) {
   transform: translate(2px, 2px);
   background: var(--vui-color-accent-soft);
   box-shadow:
@@ -547,7 +551,7 @@ body.vui-app {
 
 .segment-btn.active:hover,
 .segment-btn[aria-pressed='true']:hover,
-.ds-force-hover .segment-btn.active {
+.ds-force-hover .ds-zoom-stage .segment-btn.active {
   background: var(--vui-color-accent);
   filter: brightness(0.92);
 }
@@ -805,20 +809,30 @@ input[type='range']:focus-visible {
   display: inline-block;
   background: repeating-linear-gradient(
     var(--vui-grip-angle, 0deg),
-    var(--vui-color-text-muted) 0 1.5px,
+    var(--vui-grip-ink, var(--vui-color-text-strong)) 0 1.5px,
     transparent 1.5px 4px
   );
-  opacity: 0.65;
+  opacity: 0.5;
+  transition:
+    opacity var(--vui-motion-fast) ease,
+    background var(--vui-motion-fast) ease;
 }
 .vui-resize-grip-x {
   --vui-grip-angle: 90deg;
   width: 5px;
-  height: 16px;
+  height: 28px;
 }
 .vui-resize-grip-y {
   --vui-grip-angle: 0deg;
-  width: 16px;
+  width: 28px;
   height: 5px;
+}
+/* Hovering or focusing any divider lights its grip — the drag invitation. */
+.vui-resize-divider:hover .vui-resize-grip,
+.vui-resize-divider:focus-visible .vui-resize-grip,
+*:hover > .vui-resize-grip {
+  --vui-grip-ink: var(--vui-color-line-focus);
+  opacity: 0.9;
 }
 
 
@@ -1944,6 +1958,7 @@ body.vui-design-system-page {
   font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-xl);
   font-weight: var(--vui-font-weight-title);
+  text-transform: lowercase;
 }
 
 .ds-entry-selectors {
@@ -1979,16 +1994,28 @@ body.vui-design-system-page {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Floating demos (combobox, tooltip, menu) must escape the panel; zoomed
+     content opts back into clipping via .ds-entry-demo-scroll (BEN-553). */
+  overflow: visible;
+}
+.ds-entry-demo.ds-entry-demo-scroll {
   overflow: auto;
 }
 
-/* The zoom picker is a compact segmented control pinned to the demo's edge. */
+/* The zoom picker is a compact segmented control pinned to the demo's edge.
+   Hidden at rest so the components own the panel (BEN-561). */
 .ds-zoom-bar {
   align-self: flex-end;
+  opacity: 0;
+  transition: opacity var(--vui-motion-fast) ease;
+}
+.ds-entry-demo:hover .ds-zoom-bar,
+.ds-zoom-bar:focus-within {
+  opacity: 1;
 }
 
 .ds-zoom-stage {
-  width: fit-content;
+  width: 100%;
 }
 
 .ds-row {
@@ -2140,6 +2167,44 @@ body.vui-design-system-page {
     grid-column: 1;
     grid-row: auto;
   }
+}
+
+/* Icon buttons shown in context (BEN-561). */
+.ds-icon-btn-context {
+  align-items: center;
+  background: var(--vui-color-surface-raised);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-sharp);
+  display: inline-flex;
+  gap: var(--vui-space-1);
+  padding: var(--vui-space-1) var(--vui-space-2);
+}
+.ds-icon-btn-context-label {
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-sm);
+  margin-right: var(--vui-space-2);
+}
+
+/* Type specimen group (BEN-555). */
+.ds-type-faces,
+.ds-type-ramp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vui-space-2);
+  width: 100%;
+}
+.ds-type-ramp-row {
+  align-items: baseline;
+  display: flex;
+  gap: var(--vui-space-3);
+}
+.ds-type-ramp-token {
+  color: var(--vui-color-text-muted);
+  flex: 0 0 64px;
+  font-size: var(--vui-font-size-xs);
+}
+.ds-type-ramp-sample {
+  white-space: nowrap;
 }
 
 
