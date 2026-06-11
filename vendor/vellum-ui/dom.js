@@ -9,7 +9,9 @@ export function el(tag, options = {}, ...children) {
     else if (key === 'style' && typeof value === 'object') Object.assign(node.style, value);
     else if (key === 'onClick') node.addEventListener('click', value);
     else if (key.startsWith('aria')) {
-      const attr = 'aria-' + key.slice(4).replace(/[A-Z]/g, (char) => '-' + char.toLowerCase());
+      // ariaSelected -> aria-selected (the leading capital after "aria"
+      // supplies the hyphen; further capitals kebab as usual)
+      const attr = key.replace(/[A-Z]/g, (char) => '-' + char.toLowerCase());
       node.setAttribute(attr, String(value));
     } else if (key in node) {
       node[key] = value;

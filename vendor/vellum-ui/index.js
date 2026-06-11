@@ -10,6 +10,7 @@ export { chipHtml, chipNode } from './chip.js';
 export { toast } from './toast.js';
 export { combobox } from './combobox.js';
 export { renderStatusState, statusStateHtml } from './statusState.js';
+export { paginationRange } from './pagination.js';
 export {
   DEFAULT_THEME_STORAGE_KEY,
   applyTheme,
