@@ -156,6 +156,8 @@
   --vui-shadow-overlay: 8px 8px 0 var(--vui-color-shadow);
   --vui-shadow-hard: 6px 6px 0 var(--vui-color-shadow);
   --vui-shadow-hard-small: 3px 3px 0 var(--vui-color-text-strong);
+  /* snap drives press/hover feedback on controls (BEN-624) */
+  --vui-motion-snap: 70ms;
   --vui-motion-fast: 120ms;
   --vui-motion-base: 180ms;
   --vui-motion-slow: 260ms;
@@ -336,10 +338,10 @@ body.vui-app {
   letter-spacing: 0.04em;
   cursor: pointer;
   transition:
-    transform var(--vui-motion-fast) steps(2, end),
-    box-shadow var(--vui-motion-fast) steps(2, end),
-    background-color var(--vui-motion-fast),
-    filter var(--vui-motion-fast);
+    transform var(--vui-motion-snap) steps(2, end),
+    box-shadow var(--vui-motion-snap) steps(2, end),
+    background-color var(--vui-motion-snap),
+    filter var(--vui-motion-snap);
   text-transform: lowercase;
   background-color: var(--vui-color-warn);
   background-image:
@@ -378,6 +380,24 @@ body.vui-app {
   color: var(--vui-color-text-muted);
   cursor: default;
   filter: grayscale(0.25);
+}
+
+/* Optional keyboard-shortcut hint inside any button (BEN-622). One treatment
+   for .btn and the fab pills: currentColor-derived so it reads on gold,
+   secondary paper, and ink surfaces alike. */
+.btn-shortcut,
+.fab-shortcut {
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: var(--vui-radius-tight);
+  color: color-mix(in srgb, currentColor 85%, transparent);
+  font-size: var(--vui-font-size-xs);
+  font-weight: var(--vui-font-weight-body);
+  letter-spacing: 0;
+  line-height: 1;
+  margin-left: 2px;
+  min-width: 16px;
+  padding: 1px 4px;
+  text-align: center;
 }
 
 .btn-secondary {
@@ -530,6 +550,47 @@ body.vui-app {
   z-index: 3;
 }
 
+/* Tabs (BEN-557): underline-active row for view switching within a surface.
+   Quiet voice like the segmented control; segmented = exclusive options,
+   tabs = panes. Apps wire the switching; use aria-selected on the buttons. */
+.tab-row {
+  display: flex;
+  gap: 2px;
+  border-bottom: var(--vui-border-width) solid var(--vui-color-line);
+}
+
+.tab-btn {
+  appearance: none;
+  border: none;
+  border-bottom: var(--vui-border-width) solid transparent;
+  margin-bottom: calc(-1 * var(--vui-border-width));
+  background: transparent;
+  color: var(--vui-color-neutral-550);
+  cursor: pointer;
+  font-family: var(--vui-font-mono);
+  font-weight: 400;
+  font-size: var(--vui-font-size-xs);
+  line-height: 1;
+  padding: 7px 10px;
+  text-transform: lowercase;
+  transition: color var(--vui-motion-fast);
+}
+
+.tab-btn:hover {
+  color: var(--vui-color-text-strong);
+}
+
+.tab-btn.active,
+.tab-btn[aria-selected='true'] {
+  border-bottom-color: var(--vui-color-text-strong);
+  color: var(--vui-color-text-strong);
+}
+
+.tab-btn:focus-visible {
+  outline: 2px solid var(--vui-color-text-strong);
+  outline-offset: -2px;
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -586,6 +647,34 @@ select:focus {
 
 textarea {
   resize: vertical;
+}
+
+/* Field validation (BEN-557): flag the control with aria-invalid="true"
+   (or .field-invalid where aria doesn't fit) and follow it with a
+   .field-error line inside the field row. */
+input[aria-invalid='true'],
+textarea[aria-invalid='true'],
+select[aria-invalid='true'],
+.field-invalid {
+  border-color: var(--vui-color-danger);
+}
+
+input[aria-invalid='true']:focus,
+textarea[aria-invalid='true']:focus,
+select[aria-invalid='true']:focus,
+.field-invalid:focus {
+  border-color: var(--vui-color-danger);
+  outline: none;
+}
+
+.field-error {
+  color: var(--vui-color-danger);
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xs);
+  font-weight: var(--vui-font-weight-body);
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: lowercase;
 }
 
 input[type='checkbox']:not(.switch-input),
@@ -1147,11 +1236,13 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
   /* left/top are set at runtime when the widget is dragged (.is-positioned). */
   --feedback-capture-left: 12px;
   --feedback-capture-top: 12px;
+  /* frame tokens shared with .ui-modal-card so the widget reads as the same
+     modal family (BEN-551/620) */
   background: var(--vui-color-surface);
-  border: var(--vui-border-width) solid var(--vui-color-text);
-  border-radius: var(--vui-radius-soft);
+  border: var(--vui-modal-card-border);
+  border-radius: var(--vui-modal-card-radius);
   bottom: 148px;
-  box-shadow: var(--vui-shadow-overlay);
+  box-shadow: var(--vui-modal-card-shadow);
   display: flex;
   flex-direction: column;
   height: min(var(--feedback-capture-height), calc(100dvh - 24px));
@@ -1181,9 +1272,11 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
 body.feedback-capture-capturing .feedback-capture-widget {
   display: none;
 }
-/* Band colors/cursor come from the shared drag-band rules above. */
+/* Band colors/cursor come from the shared drag-band rules above; the inner
+   clip radius follows the modal-card frame. */
 .feedback-capture-head {
-  border-radius: var(--vui-radius-soft) var(--vui-radius-soft) 0 0;
+  border-radius: calc(var(--vui-modal-card-radius) - var(--vui-border-width))
+    calc(var(--vui-modal-card-radius) - var(--vui-border-width)) 0 0;
   gap: 12px;
   min-height: 40px;
   padding: 8px 10px 8px 12px;
@@ -1197,7 +1290,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
   min-height: 0;
   overflow: auto;
   padding: 10px;
-  border-radius: 0 0 var(--vui-radius-soft) var(--vui-radius-soft);
+  border-radius: 0 0 calc(var(--vui-modal-card-radius) - var(--vui-border-width))
+    calc(var(--vui-modal-card-radius) - var(--vui-border-width));
 }
 .feedback-annotation-tools {
   display: flex;
@@ -1357,17 +1451,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 .fab-label {
   white-space: nowrap;
 }
-.fab-shortcut {
-  border: 1px solid var(--vui-color-on-dark-line);
-  border-radius: var(--vui-radius-tight);
-  color: var(--vui-color-on-dark-text-soft);
-  font-size: var(--vui-font-size-xs);
-  line-height: 1;
-  margin-left: 2px;
-  min-width: 16px;
-  padding: 1px 4px;
-  text-align: center;
-}
+/* .fab-shortcut shares the .btn-shortcut rule in primitives.css (BEN-622). */
 
 
 /* components.css */
@@ -1435,13 +1519,17 @@ body.feedback-capture-capturing .feedback-capture-widget {
   outline: none;
 }
 
+/* Variant geometry matches the production "sticker" chips in biblioplex's
+   table view — sharp corners, hairline border, xxs type (BEN-626). */
 .ui-chip-role,
 .ui-chip-status,
 .ui-chip-filter {
-  border: var(--vui-border-width) solid var(--vui-color-line);
+  border: 1px solid var(--vui-color-line);
+  border-radius: var(--vui-radius-sharp);
   background: var(--vui-color-surface-sunken);
   color: var(--vui-color-text-muted);
-  padding: 1px 8px;
+  font-size: var(--vui-font-size-xxs);
+  padding: 1px 6px;
 }
 
 .status-state {
@@ -1752,6 +1840,106 @@ body.feedback-capture-capturing .feedback-capture-widget {
   font-size: var(--vui-font-size-jumbo);
   line-height: 1;
   opacity: 0.6;
+}
+
+/* Pagination (BEN-557): quiet page stepper in the segmented voice —
+   transparent buttons, grey labels, ink-filled current page. Mark the
+   current page with aria-current="page"; use paginationRange() from
+   pagination.js to build the number list. */
+.pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xs);
+}
+
+.pager-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 5px;
+  border: none;
+  border-radius: var(--vui-radius-tight);
+  background: transparent;
+  color: var(--vui-color-neutral-550);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  text-transform: lowercase;
+  transition: color var(--vui-motion-fast);
+}
+
+.pager-btn:hover:not(:disabled) {
+  color: var(--vui-color-text-strong);
+}
+
+.pager-btn[aria-current='page'] {
+  background: var(--vui-color-text-strong);
+  color: var(--vui-color-text-inverse);
+}
+
+.pager-btn:disabled {
+  color: var(--vui-color-line);
+  cursor: default;
+}
+
+.pager-btn:focus-visible {
+  outline: 2px solid var(--vui-color-text-strong);
+  outline-offset: 1px;
+}
+
+.pager-gap {
+  color: var(--vui-color-text-muted);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* Placeholder card in sleeve (BEN-550): a sleeved empty card slot for
+   binder/deck grids. Size via --card-sleeve-width; MTG card aspect. */
+.card-sleeve {
+  --card-sleeve-width: 120px;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--card-sleeve-width);
+  aspect-ratio: 63 / 88;
+  padding: calc(var(--card-sleeve-width) * 0.045);
+  border: 1px solid var(--vui-color-line);
+  border-radius: var(--vui-radius-sharp);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(21, 16, 13, 0.05) 100%),
+    var(--vui-color-surface);
+  box-shadow: var(--vui-shadow-lift);
+}
+
+.card-sleeve::after {
+  /* sleeve sheen stripe */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.22) 34%, transparent 42%);
+  pointer-events: none;
+}
+
+.card-sleeve-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: var(--vui-border-width) dashed var(--vui-color-line);
+  border-radius: var(--vui-radius-card);
+  background: var(--vui-color-surface-placeholder);
+  background-image: radial-gradient(rgba(21, 16, 13, 0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+  color: var(--vui-color-text-muted);
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xxs);
+  text-transform: lowercase;
 }
 
 .card-preview-anchor {
