@@ -57,7 +57,6 @@
   --vui-color-accent: #6c3aa4;
   --vui-color-accent-soft: #e7d8f5;
   --vui-color-accent-strong: #202842;
-  --vui-color-rune-close-bg: #374269;
   --vui-color-success: #7f9461;
   --vui-color-warn: #f2c452;
   --vui-color-danger: #a73528;
@@ -98,16 +97,9 @@
   --vui-modal-body-padding: 14px 16px;
   --vui-modal-actions-padding: 12px 16px;
   --vui-modal-actions-gap: 8px;
+  /* Close geometry only — the quiet × carries no decoration (BEN-604). */
   --vui-modal-close-size: 28px;
   --vui-modal-close-offset: 11px;
-  --vui-modal-close-radius: 0px;
-  --vui-modal-close-border: 3px solid var(--vui-color-line);
-  --vui-modal-close-bg: var(--vui-color-surface-raised);
-  --vui-modal-close-color: var(--vui-color-text-muted);
-  --vui-modal-close-hover-bg: #ac4133;
-  --vui-modal-close-hover-color: var(--vui-color-neutral-white);
-  --vui-modal-close-shadow: none;
-  --vui-modal-close-hover-shadow: none;
   --vui-modal-resize-edge-size: 8px;
   --vui-modal-resize-corner-size: 28px;
   --vui-color-success-bg: #effaef;
@@ -471,32 +463,30 @@ body.vui-app {
   width: fit-content;
 }
 
+/* Quiet segmented control (BEN-607): transparent segments, grey labels,
+   ink-filled active — no shadows, no press transforms. One size scale
+   plus .segmented-compact for dense chrome. */
 .segment-btn {
   appearance: none;
   position: relative;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: var(--vui-border-width) solid var(--vui-color-line-strong);
   border-radius: var(--vui-radius-sharp);
-  background: var(--vui-color-surface-raised);
-  color: var(--vui-color-text-strong);
+  background: transparent;
+  color: var(--vui-color-neutral-550);
   cursor: pointer;
   font-family: var(--vui-font-mono);
-  font-weight: var(--vui-font-weight-title);
-  font-size: var(--vui-font-size-sm);
+  font-weight: 400;
+  font-size: var(--vui-font-size-xs);
   line-height: 1;
-  min-height: 30px;
-  padding: 7px 12px;
+  min-height: var(--vui-control-height-compact);
+  padding: 6px 10px;
   text-decoration: none;
   text-transform: lowercase;
-  box-shadow:
-    var(--vui-shadow-firm),
-    0 4px 0 var(--vui-color-shadow);
   transition:
-    transform var(--vui-motion-fast) steps(2, end),
-    box-shadow var(--vui-motion-fast) steps(2, end),
+    color var(--vui-motion-fast),
     background-color var(--vui-motion-fast);
 }
 
@@ -509,9 +499,6 @@ body.vui-app {
   font-size: var(--vui-font-size-xxs);
   min-height: 0;
   padding: 4px 8px;
-  box-shadow:
-    var(--vui-shadow-hard-small),
-    0 3px 0 var(--vui-color-shadow);
 }
 
 .segment-btn:not(:first-child) {
@@ -526,34 +513,15 @@ body.vui-app {
 
 .segment-btn:hover:not(.active),
 .ds-force-hover .ds-zoom-stage .segment-btn:not(.active) {
-  transform: translate(2px, 2px);
-  background: var(--vui-color-accent-soft);
-  box-shadow:
-    2px 2px 0 var(--vui-color-shadow),
-    0 2px 0 var(--vui-color-shadow);
-}
-
-.segment-btn:active:not(.active) {
-  transform: translate(4px, 4px);
-  box-shadow: 0 0 0 var(--vui-color-shadow);
-  filter: brightness(0.94);
+  color: var(--vui-color-text-strong);
 }
 
 .segment-btn.active,
 .segment-btn[aria-pressed='true'] {
-  background: var(--vui-color-accent);
+  background: var(--vui-color-text-strong);
+  border-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-inverse);
-  transform: translate(4px, 4px);
-  box-shadow: 0 0 0 var(--vui-color-shadow);
-  filter: brightness(0.94);
   z-index: 1;
-}
-
-.segment-btn.active:hover,
-.segment-btn[aria-pressed='true']:hover,
-.ds-force-hover .ds-zoom-stage .segment-btn.active {
-  background: var(--vui-color-accent);
-  filter: brightness(0.92);
 }
 
 .segment-btn:focus-visible {
@@ -987,6 +955,9 @@ input[type='range']:focus-visible {
   opacity: 0.8;
 }
 
+/* The one dismiss affordance (BEN-604): a quiet grey × — transparent, no
+   border, no shadow. The class name predates the redesign and stays so
+   consumer markup doesn't churn. */
 .rune-close {
   appearance: none;
   position: absolute;
@@ -1000,38 +971,63 @@ input[type='range']:focus-visible {
   flex: 0 0 auto;
   width: var(--vui-modal-close-size);
   height: var(--vui-modal-close-size);
-  padding: 1px 0 0;
-  border: var(--vui-modal-close-border);
-  border-radius: var(--vui-modal-close-radius);
-  background: var(--vui-modal-close-bg);
-  color: var(--vui-modal-close-color);
-  box-shadow: var(--vui-modal-close-shadow);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vui-color-neutral-350);
   font-family: var(--vui-font-mono);
   font-size: var(--vui-font-size-lg);
   font-weight: var(--vui-font-weight-title);
   line-height: 1;
   cursor: pointer;
-  transition:
-    transform var(--vui-motion-fast) steps(2, end),
-    box-shadow var(--vui-motion-fast) steps(2, end),
-    background-color var(--vui-motion-fast),
-    color var(--vui-motion-fast);
+  transition: color var(--vui-motion-fast);
 }
 
 .rune-close:hover {
-  transform: none;
-  box-shadow: var(--vui-modal-close-hover-shadow);
-  background: var(--vui-modal-close-hover-bg);
-  color: var(--vui-modal-close-hover-color);
-}
-
-.rune-close:active {
-  filter: brightness(0.96);
+  color: var(--vui-color-neutral-black);
 }
 
 .rune-close:focus-visible {
   outline: var(--vui-focus-ring);
   outline-offset: var(--vui-focus-ring-offset);
+}
+
+/* Drag band — canonical head for draggable floating panels (BEN-605):
+   ink band, inverse title, move cursor. Centered (non-draggable) modals
+   keep the textured parchment .ui-modal-head. Upstreamed from biblioplex;
+   .feedback-capture-head wears it natively. */
+.ui-modal-head-drag,
+.feedback-capture-head {
+  align-items: center;
+  background: var(--vui-color-text);
+  border-bottom: none;
+  color: var(--vui-color-text-inverse);
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.ui-modal-head-drag .ui-modal-title,
+.feedback-capture-title {
+  font-family: var(--vui-font-body);
+  font-size: var(--vui-font-size-sm-plus);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* On the ink band the quiet × sits in-flow and flips to on-dark colors. */
+.ui-modal-head-drag .rune-close,
+.feedback-capture-head .rune-close {
+  position: static;
+  color: var(--vui-color-on-dark-text-soft);
+}
+
+.ui-modal-head-drag .rune-close:hover,
+.feedback-capture-head .rune-close:hover {
+  color: var(--vui-color-text-inverse);
 }
 
 .ui-popover {
@@ -1163,8 +1159,7 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
   max-width: calc(100vw - 24px);
   min-height: min(280px, calc(100dvh - 24px));
   min-width: min(320px, calc(100vw - 24px));
-  /* visible so the corner-overlapping .rune-close isn't clipped; the rounded
-     clip lives on the inner head (top) and body (bottom) instead. */
+  /* the rounded clip lives on the inner head (top) and body (bottom). */
   overflow: visible;
   position: fixed;
   right: 16px;
@@ -1186,27 +1181,13 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
 body.feedback-capture-capturing .feedback-capture-widget {
   display: none;
 }
+/* Band colors/cursor come from the shared drag-band rules above. */
 .feedback-capture-head {
-  align-items: center;
-  background: none;
-  background-image: linear-gradient(var(--vui-color-surface-sunken), var(--vui-color-surface-sunken));
-  color: var(--vui-color-text-strong);
-  border-bottom: var(--vui-border-width) solid var(--vui-color-text-strong);
   border-radius: var(--vui-radius-soft) var(--vui-radius-soft) 0 0;
-  cursor: move;
-  display: flex;
   gap: 12px;
-  justify-content: space-between;
   min-height: 40px;
   padding: 8px 10px 8px 12px;
   touch-action: none;
-}
-.feedback-capture-title {
-  font-family: var(--vui-font-display);
-  font-size: var(--vui-font-size-xl);
-  font-weight: var(--vui-font-weight-title);
-  line-height: 1.2;
-  margin: 0;
 }
 .feedback-capture-body {
   display: flex;
@@ -1645,6 +1626,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 /* CSS-first tooltip: put .tooltip-host + data-tooltip on any element.
+   Night-blue hard-shadow bubble, upstreamed from biblioplex (BEN-606).
    .tooltip-term adds the dotted-underline inline-glossary treatment. */
 .tooltip-host {
   position: relative;
@@ -1658,15 +1640,17 @@ body.feedback-capture-capturing .feedback-capture-widget {
   transform: translateX(-50%);
   width: max-content;
   max-width: 240px;
-  background: var(--vui-color-text-strong);
+  background: var(--vui-color-accent-strong);
   color: var(--vui-color-text-inverse);
+  border: var(--vui-border-width) solid var(--vui-color-text-strong);
+  box-shadow: var(--vui-shadow-hard-small);
   font-family: var(--vui-font-mono);
   font-size: var(--vui-font-size-xs);
   font-weight: var(--vui-font-weight-body);
   line-height: 1.35;
   text-transform: lowercase;
-  padding: 4px 8px;
-  border-radius: var(--vui-radius-tight);
+  padding: 6px 9px;
+  border-radius: var(--vui-radius-sharp);
   white-space: normal;
   z-index: var(--vui-z-flyout);
   opacity: 0;
@@ -2532,9 +2516,11 @@ body.vui-lab-page {
   height: 30px;
   border: var(--vui-border-width) solid var(--vui-color-text-strong);
   border-radius: 50%;
+  /* indigo hardcoded: the rune treatment is retired (BEN-604); the lab keeps
+     it for comparison only, so it no longer earns a token. */
   background:
     radial-gradient(rgba(242, 196, 82, 0.18) 0 22%, transparent 23%),
-    var(--vui-color-rune-close-bg);
+    #374269;
   box-shadow: var(--vui-shadow-hard-small);
   color: var(--vui-color-warn);
 }
