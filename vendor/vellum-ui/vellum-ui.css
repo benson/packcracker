@@ -1109,13 +1109,25 @@ input[type='range']:focus-visible {
 
 /* On the ink band the quiet × sits in-flow and flips to on-dark colors. */
 .ui-modal-head .rune-close,
+.ui-modal-head-drag .rune-close,
 .feedback-capture-head .rune-close {
   position: static;
   color: var(--vui-color-on-dark-text-soft);
 }
 
 .ui-modal-head .rune-close:hover,
+.ui-modal-head-drag .rune-close:hover,
 .feedback-capture-head .rune-close:hover {
+  color: var(--vui-color-text-inverse);
+}
+
+/* Card-corner markup (× as a direct card child) still lands on the band —
+   same on-dark ink, keeps its absolute corner position. */
+.ui-modal-card > .rune-close {
+  color: var(--vui-color-on-dark-text-soft);
+}
+
+.ui-modal-card > .rune-close:hover {
   color: var(--vui-color-text-inverse);
 }
 

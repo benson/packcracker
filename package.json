@@ -26,6 +26,6 @@
     "serve": "^14.2.5"
   },
   "dependencies": {
-    "@benson/vellum-ui": "git+https://github.com/benson/vellum-ui.git#303164a6e9f2dd1785fc7da9c0cd75e6517d794c"
+    "@benson/vellum-ui": "git+https://github.com/benson/vellum-ui.git#1dcd0b3929a54560ddb001f7d763ed2671011d9e"
   }
 }
