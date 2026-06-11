@@ -313,7 +313,7 @@ select:disabled {
   align-items: center;
   gap: 10px;
   padding: 40px 0;
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -428,7 +428,7 @@ select:disabled {
 .card:hover .card-name {
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  text-underline-offset: 4px;
 }
 
 .card-prices {
@@ -799,4 +799,30 @@ footer.site-footer a:hover {
   border: 1px solid var(--border-light);
   border-radius: 0;
   color: var(--text-faint);
+}
+
+/* Vellum toast (fired on feedback submit), same reskin */
+.toast {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-transform: lowercase;
+}
+
+.toast-success,
+.toast-warn,
+.toast-danger {
+  border-color: var(--border);
+}
+
+.toast .icon-btn {
+  color: var(--text-muted);
+}
+
+.toast .icon-btn:hover {
+  color: var(--text);
 }
