@@ -1910,30 +1910,60 @@ body.feedback-capture-capturing .feedback-capture-widget {
   user-select: none;
 }
 
-/* Placeholder card in sleeve (BEN-550): a sleeved empty card slot for
-   binder/deck grids. Size via --card-sleeve-width; MTG card aspect. */
+/* Card in a plastic sleeve (BEN-550, iterated): a penny-sleeved card inside
+   a rigid toploader shell — visible shell ring, tape across the opening,
+   optional price sticker. Size via --card-sleeve-width; the decorative rgba
+   layers are deliberate (same tactile language as biblioplex's history
+   sleeve). Markup: .card-sleeve > .card-sleeve-slot (or an <img>), plus an
+   optional <span class="card-sleeve-price">$4.20</span>. */
 .card-sleeve {
   --card-sleeve-width: 120px;
   position: relative;
   box-sizing: border-box;
   width: var(--card-sleeve-width);
   aspect-ratio: 63 / 88;
-  padding: calc(var(--card-sleeve-width) * 0.045);
-  border: 1px solid var(--vui-color-line);
-  border-radius: var(--vui-radius-sharp);
+  /* extra headroom at the top: the shell opening */
+  padding: calc(var(--card-sleeve-width) * 0.08) calc(var(--card-sleeve-width) * 0.055)
+    calc(var(--card-sleeve-width) * 0.055);
+  border: 1px solid rgba(113, 99, 79, 0.38);
+  border-radius: var(--vui-radius-tight);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(21, 16, 13, 0.05) 100%),
-    var(--vui-color-surface);
-  box-shadow: var(--vui-shadow-lift);
+    linear-gradient(112deg, rgba(255, 255, 255, 0.42) 0 18%, rgba(255, 255, 255, 0.12) 19% 40%, transparent 41%),
+    linear-gradient(180deg, rgba(222, 214, 198, 0.5), rgba(172, 158, 136, 0.4));
+  /* the inset white ring is the hard shell's inner edge */
+  box-shadow:
+    0 10px 12px -7px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
-.card-sleeve::after {
-  /* sleeve sheen stripe */
+.card-sleeve::before {
+  /* penny-sleeve plastic: diagonal sheen + dust specks */
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 2;
   border-radius: inherit;
-  background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.22) 34%, transparent 42%);
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.26) 36%, transparent 44%),
+    radial-gradient(circle at 18% 82%, rgba(66, 50, 38, 0.14) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 86% 14%, rgba(255, 255, 255, 0.5) 0 2px, transparent 2.6px);
+  pointer-events: none;
+}
+
+.card-sleeve::after {
+  /* tape sealing the shell opening */
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--card-sleeve-width) * 0.025);
+  left: -6px;
+  width: calc(100% + 12px);
+  height: calc(var(--card-sleeve-width) * 0.12);
+  transform: rotate(-2deg);
+  background: rgba(236, 230, 214, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(123, 101, 76, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   pointer-events: none;
 }
 
@@ -1952,6 +1982,40 @@ body.feedback-capture-capturing .feedback-capture-widget {
   font-family: var(--vui-font-mono);
   font-size: var(--vui-font-size-xxs);
   text-transform: lowercase;
+}
+
+/* Price sticker — printed sticker, so its ink stays fixed in both themes. */
+.card-sleeve-price {
+  position: absolute;
+  z-index: 4;
+  right: -7px;
+  bottom: calc(var(--card-sleeve-width) * 0.14);
+  transform: rotate(6deg);
+  background: #fffef8;
+  border: 1px solid rgba(21, 16, 13, 0.55);
+  border-radius: var(--vui-radius-pill);
+  box-shadow: 1px 1px 0 rgba(21, 16, 13, 0.3);
+  color: #15100d;
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xxs);
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 6px;
+}
+
+/* Lifestyle tilt for empty states — hover lifts like a card being picked up. */
+.card-sleeve-tilt {
+  transform: rotate(-5deg);
+  transition:
+    transform var(--vui-motion-base),
+    box-shadow var(--vui-motion-base);
+}
+
+.card-sleeve-tilt:hover {
+  transform: rotate(-3deg) translateY(-2px) scale(1.03);
+  box-shadow:
+    0 13px 14px -7px rgba(0, 0, 0, 0.26),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.34);
 }
 
 .card-preview-anchor {
