@@ -10,8 +10,9 @@
   --vui-focus-ring: 2px solid var(--vui-color-text-strong);
   --vui-focus-ring-offset: 2px;
   --vui-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --vui-font-heading: 'Cormorant Unicase', Georgia, 'Times New Roman', serif;
-  --vui-font-display: 'Cormorant Unicase', Georgia, 'Times New Roman', serif;
+  /* BEN-623: quieter bookish serif — no unicase theatrics, no webfont. */
+  --vui-font-heading: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --vui-font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --vui-font-mono: 'Courier New', Courier, monospace;
   --vui-font-size-xxxs: 0.55rem;
   --vui-font-size-xxs: 0.68rem;
@@ -1729,7 +1730,10 @@ body.feedback-capture-capturing .feedback-capture-widget {
 
 /* CSS-first tooltip: put .tooltip-host + data-tooltip on any element.
    Night-blue hard-shadow bubble, upstreamed from biblioplex (BEN-606).
-   .tooltip-term adds the dotted-underline inline-glossary treatment. */
+   .tooltip-term adds the dotted-underline inline-glossary treatment.
+   Policy (BEN-636): labeled buttons don't get tooltips — their label is the
+   explanation, and a .btn-shortcut chip carries any extra hint. Legit hosts
+   are unlabeled icon buttons and inline glossary terms. */
 .tooltip-host {
   position: relative;
 }
@@ -1737,7 +1741,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 .tooltip-host::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
   width: max-content;
@@ -1912,12 +1916,14 @@ body.feedback-capture-capturing .feedback-capture-widget {
   user-select: none;
 }
 
-/* Card in a plastic sleeve (BEN-550, iterated): a penny-sleeved card inside
-   a rigid toploader shell — visible shell ring, tape across the opening,
-   optional price sticker. Size via --card-sleeve-width; the decorative rgba
-   layers are deliberate (same tactile language as biblioplex's history
-   sleeve). Markup: .card-sleeve > .card-sleeve-slot (or an <img>), plus an
-   optional <span class="card-sleeve-price">$4.20</span>. */
+/* Card in a plastic sleeve (BEN-550, iterated; BEN-637 made it the ONE sleeve):
+   a penny-sleeved card inside a rigid toploader shell — visible shell ring,
+   tape across the opening, optional price sticker. Size via --card-sleeve-width;
+   every ornament (ring, specks, tape, drop shadow) scales with it so the same
+   component works from a 76px deck-home thumbnail to a 340px hover preview.
+   The decorative rgba layers are deliberate. Markup: .card-sleeve >
+   .card-sleeve-slot (or an <img>), plus an optional
+   <span class="card-sleeve-price">$4.20</span>. */
 .card-sleeve {
   --card-sleeve-width: 120px;
   position: relative;
@@ -1934,8 +1940,9 @@ body.feedback-capture-capturing .feedback-capture-widget {
     linear-gradient(180deg, rgba(222, 214, 198, 0.5), rgba(172, 158, 136, 0.4));
   /* the inset white ring is the hard shell's inner edge */
   box-shadow:
-    0 10px 12px -7px rgba(0, 0, 0, 0.24),
-    inset 0 0 0 3px rgba(255, 255, 255, 0.3);
+    0 calc(var(--card-sleeve-width) * 0.083) calc(var(--card-sleeve-width) * 0.1)
+      calc(var(--card-sleeve-width) * -0.058) rgba(0, 0, 0, 0.24),
+    inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.3);
 }
 
 .card-sleeve::before {
@@ -1947,8 +1954,16 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border-radius: inherit;
   background:
     linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.26) 36%, transparent 44%),
-    radial-gradient(circle at 18% 82%, rgba(66, 50, 38, 0.14) 0 1.5px, transparent 2px),
-    radial-gradient(circle at 86% 14%, rgba(255, 255, 255, 0.5) 0 2px, transparent 2.6px);
+    radial-gradient(
+      circle at 18% 82%,
+      rgba(66, 50, 38, 0.14) 0 calc(var(--card-sleeve-width) * 0.0125),
+      transparent calc(var(--card-sleeve-width) * 0.0165)
+    ),
+    radial-gradient(
+      circle at 86% 14%,
+      rgba(255, 255, 255, 0.5) 0 calc(var(--card-sleeve-width) * 0.0165),
+      transparent calc(var(--card-sleeve-width) * 0.0215)
+    );
   pointer-events: none;
 }
 
@@ -1958,8 +1973,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
   position: absolute;
   z-index: 3;
   top: calc(var(--card-sleeve-width) * 0.025);
-  left: -6px;
-  width: calc(100% + 12px);
+  left: calc(var(--card-sleeve-width) * -0.05);
+  width: calc(100% + var(--card-sleeve-width) * 0.1);
   height: calc(var(--card-sleeve-width) * 0.12);
   transform: rotate(-2deg);
   background: rgba(236, 230, 214, 0.55);
@@ -1967,6 +1982,18 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border-bottom: 1px solid rgba(123, 101, 76, 0.25);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   pointer-events: none;
+}
+
+/* A real card image in the sleeve: slightly muted, like print under plastic. */
+.card-sleeve > img {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--vui-radius-card);
+  filter: saturate(0.9) contrast(0.96);
 }
 
 .card-sleeve-slot {
@@ -2016,8 +2043,9 @@ body.feedback-capture-capturing .feedback-capture-widget {
 .card-sleeve-tilt:hover {
   transform: rotate(-3deg) translateY(-2px) scale(1.03);
   box-shadow:
-    0 13px 14px -7px rgba(0, 0, 0, 0.26),
-    inset 0 0 0 3px rgba(255, 255, 255, 0.34);
+    0 calc(var(--card-sleeve-width) * 0.108) calc(var(--card-sleeve-width) * 0.117)
+      calc(var(--card-sleeve-width) * -0.058) rgba(0, 0, 0, 0.26),
+    inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.34);
 }
 
 .card-preview-anchor {
