@@ -1467,21 +1467,36 @@ body.feedback-capture-capturing .feedback-capture-widget {
 
 
 /* components.css */
-/* Shared chip primitive for tag/role/status/filter surfaces. Apps layer
-   domain variants (location pills, tag chips) on top of this base. */
+/* One chip. Tags, statuses, filters, location pills — every .ui-chip surface
+   wears the same sticker: sharp corners, hairline border, hard shadow, mono
+   ink. Apps tint per-domain through the --ui-chip-* hooks (inline or via a
+   domain class) instead of forking variant treatments. */
 .ui-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: var(--vui-radius-round);
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 4px 1px 5px;
+  border: 1px solid var(--ui-chip-border, var(--vui-color-line));
+  border-radius: var(--vui-radius-sharp);
+  background: var(--ui-chip-bg, var(--vui-color-surface-sunken));
+  color: var(--ui-chip-ink, var(--vui-color-text-strong));
+  box-shadow: 2px 2px 0 var(--vui-color-text-strong);
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xxs);
+  font-weight: var(--vui-font-weight-title);
   line-height: 1.4;
-  font-size: var(--vui-font-size-sm);
   white-space: nowrap;
   vertical-align: middle;
 }
 
 .ui-chip-label {
   text-transform: lowercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* Emoji/icon prefix. A bare unicode emoji sits off the text baseline inside a
@@ -1529,19 +1544,6 @@ body.feedback-capture-capturing .feedback-capture-widget {
   color: var(--vui-color-text-strong);
   background: var(--vui-color-surface-hover);
   outline: none;
-}
-
-/* Variant geometry matches the production "sticker" chips in biblioplex's
-   table view — sharp corners, hairline border, xxs type (BEN-626). */
-.ui-chip-role,
-.ui-chip-status,
-.ui-chip-filter {
-  border: 1px solid var(--vui-color-line);
-  border-radius: var(--vui-radius-sharp);
-  background: var(--vui-color-surface-sunken);
-  color: var(--vui-color-text-muted);
-  font-size: var(--vui-font-size-xxs);
-  padding: 1px 6px;
 }
 
 .status-state {
