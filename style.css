@@ -31,7 +31,9 @@ body {
   max-width: 1400px;
 }
 
-header {
+/* Scoped to the page header — a bare `header` selector also catches the
+   vellum feedback widget's <header> band. */
+.container > header {
   position: relative;
   margin-bottom: 40px;
 }
