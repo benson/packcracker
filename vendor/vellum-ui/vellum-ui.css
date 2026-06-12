@@ -1943,8 +1943,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
 /* Card in a plastic sleeve (BEN-550, iterated; BEN-637 made it the ONE sleeve):
    a penny-sleeved card inside a rigid toploader shell — visible shell ring,
    tape across the opening, optional price sticker. Size via --card-sleeve-width;
-   every ornament (ring, specks, tape, drop shadow) scales with it so the same
-   component works from a 76px deck-home thumbnail to a 340px hover preview.
+   every ornament (ring, specks, tape) scales with it so the same component
+   works from a 76px deck-home thumbnail to a 340px hover preview.
    The decorative rgba layers are deliberate. Markup: .card-sleeve >
    .card-sleeve-slot (or an <img>), plus an optional
    <span class="card-sleeve-price">$4.20</span>. */
@@ -1962,11 +1962,10 @@ body.feedback-capture-capturing .feedback-capture-widget {
   background:
     linear-gradient(112deg, rgba(255, 255, 255, 0.42) 0 18%, rgba(255, 255, 255, 0.12) 19% 40%, transparent 41%),
     linear-gradient(180deg, rgba(222, 214, 198, 0.5), rgba(172, 158, 136, 0.4));
-  /* the inset white ring is the hard shell's inner edge */
-  box-shadow:
-    0 calc(var(--card-sleeve-width) * 0.083) calc(var(--card-sleeve-width) * 0.1)
-      calc(var(--card-sleeve-width) * -0.058) rgba(0, 0, 0, 0.24),
-    inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.3);
+  /* the inset white ring is the hard shell's inner edge. Cards lie FLAT on
+     the page — no drop shadow, ever (the ring/tape/sticker are drawn-on
+     detail, not elevation). */
+  box-shadow: inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.3);
 }
 
 .card-sleeve::before {
@@ -2056,26 +2055,22 @@ body.feedback-capture-capturing .feedback-capture-widget {
   padding: 3px 6px;
 }
 
-/* Lifestyle tilt for empty states — hover lifts like a card being picked up. */
+/* Lifestyle tilt for empty states — a card lying askew on the page. Hover
+   straightens it slightly; it stays flat (no lift, no shadow). */
 .card-sleeve-tilt {
   transform: rotate(-5deg);
-  transition:
-    transform var(--vui-motion-base),
-    box-shadow var(--vui-motion-base);
+  transition: transform var(--vui-motion-base);
 }
 
 .card-sleeve-tilt:hover {
-  transform: rotate(-3deg) translateY(-2px) scale(1.03);
-  box-shadow:
-    0 calc(var(--card-sleeve-width) * 0.108) calc(var(--card-sleeve-width) * 0.117)
-      calc(var(--card-sleeve-width) * -0.058) rgba(0, 0, 0, 0.26),
-    inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.34);
+  transform: rotate(-3deg);
 }
 
 .card-preview-anchor {
   cursor: zoom-in;
 }
 
+/* Flat like every card surface — the border alone frames it. */
 .card-preview {
   position: fixed;
   z-index: var(--vui-z-toast);
@@ -2083,7 +2078,6 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border: 2px solid var(--vui-color-line-strong);
   border-radius: var(--vui-radius-soft);
   background: var(--vui-color-surface-raised);
-  box-shadow: var(--vui-shadow-hard);
   overflow: hidden;
 }
 
