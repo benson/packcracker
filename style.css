@@ -340,17 +340,12 @@ select:disabled {
   color: inherit;
 }
 
-.card:hover .card-image {
-  box-shadow: var(--vui-shadow-firm, 4px 4px 0 #3d2b22);
-}
-
+/* Card images sit flat on the page — no shadow, no hover lift. */
 .card-image {
   width: 100%;
   aspect-ratio: 488 / 680;
   display: block;
-  transition: box-shadow 0.15s ease;
   border-radius: 4.75%;
-  box-shadow: var(--vui-shadow-soft, 3px 3px 0 #3d2b22);
 }
 
 .card-img {
