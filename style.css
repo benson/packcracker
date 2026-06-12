@@ -5,33 +5,21 @@
 }
 
 :root {
-  --bg: #f8f7f4;
-  --bg-alt: #edecea;
-  --text: #000;
-  --text-muted: #666;
-  --text-faint: #999;
-  --border: #000;
-  --border-light: #ccc;
-  --border-faint: #eee;
-  --shadow: rgba(0, 0, 0, 0.15);
-  --shadow-hover: rgba(0, 0, 0, 0.2);
+  --bg: var(--vui-color-bg, #f1eef6);
+  --bg-alt: var(--vui-color-surface, #e7e2ee);
+  --text: var(--vui-color-text, #15100d);
+  --text-muted: var(--vui-color-text-muted, #5b3b25);
+  --text-faint: var(--vui-color-neutral-350, #999);
+  --border: var(--vui-color-line-strong, #15100d);
+  --border-light: var(--vui-color-line, rgba(21, 16, 13, 0.4));
+  --border-faint: color-mix(in srgb, var(--vui-color-line-strong, #15100d) 12%, transparent);
 }
 
-[data-theme="dark"] {
-  --bg: #1a1a1a;
-  --bg-alt: #2a2a2a;
-  --text: #e8e8e8;
-  --text-muted: #aaa;
-  --text-faint: #777;
-  --border: #999;
-  --border-light: #555;
-  --border-faint: #333;
-  --shadow: rgba(0, 0, 0, 0.4);
-  --shadow-hover: rgba(0, 0, 0, 0.5);
-}
+/* Dark palette flows from vellum's [data-theme="dark"] token layer (set on
+   <html> by app.js) through the --vui-* aliases above. */
 
 body {
-  font-family: "Times New Roman", Times, Georgia, serif;
+  font-family: var(--vui-font-body, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -46,6 +34,12 @@ body {
 header {
   position: relative;
   margin-bottom: 40px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--vui-font-heading, 'Palatino Linotype', Palatino, Georgia, serif);
 }
 
 h1 {
@@ -190,47 +184,8 @@ select:disabled {
   text-transform: lowercase;
 }
 
-/* Vellum combobox list, reskinned to the local minimal look */
 .autocomplete-wrapper.combobox {
   display: block;
-}
-
-.autocomplete-wrapper .combobox-list {
-  top: 100%;
-  right: 0;
-  max-height: 300px;
-  gap: 0;
-  padding: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0;
-  box-shadow: none;
-  z-index: 100;
-}
-
-.autocomplete-wrapper .combobox-option {
-  font-family: inherit;
-  font-size: 0.9rem;
-  justify-content: flex-start;
-  padding: 10px 8px;
-  border-radius: 0;
-  border-bottom: 1px solid var(--border-faint);
-  color: var(--text);
-}
-
-.autocomplete-wrapper .combobox-option:last-child {
-  border-bottom: none;
-}
-
-.autocomplete-wrapper .combobox-option:hover,
-.autocomplete-wrapper .combobox-option.is-active {
-  background: var(--bg-alt);
-}
-
-.autocomplete-wrapper .combobox-option-hint {
-  color: var(--text-faint);
-  font-size: 0.9rem;
 }
 
 /* checkbox styling */
@@ -386,7 +341,7 @@ select:disabled {
 }
 
 .card:hover .card-image {
-  box-shadow: 0 4px 12px var(--shadow-hover), 0 2px 4px var(--shadow);
+  box-shadow: var(--vui-shadow-firm, 4px 4px 0 #3d2b22);
 }
 
 .card-image {
@@ -395,7 +350,7 @@ select:disabled {
   display: block;
   transition: box-shadow 0.15s ease;
   border-radius: 4.75%;
-  box-shadow: 0 2px 8px var(--shadow), 0 1px 3px var(--shadow);
+  box-shadow: var(--vui-shadow-soft, 3px 3px 0 #3d2b22);
 }
 
 .card-img {

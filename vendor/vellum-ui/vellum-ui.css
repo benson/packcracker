@@ -2,8 +2,14 @@
 :root {
   /* Vellum canonical tokens */
   --vui-edge-margin: 12px;
+  /* The z ladder, lowest to highest: flyout 50 < modal 110 < fab 120 <
+     feedback canvas 125 < feedback widget 130 < toast 160. New overlays
+     pick a rung here, never a raw number. */
   --vui-z-flyout: 50;
   --vui-z-modal: 110;
+  --vui-z-fab: 120;
+  --vui-z-feedback-canvas: 125;
+  --vui-z-feedback: 130;
   --vui-control-height-compact: 28px;
   --vui-control-pad-y: 5px;
   --vui-control-pad-x: 10px;
@@ -24,8 +30,6 @@
   --vui-font-size-xl: 1.02rem;
   --vui-font-size-heading: 1.3rem;
   --vui-font-size-display: 1.7rem;
-  --vui-font-size-xs-plus: 0.75rem;
-  --vui-font-size-sm-plus: 0.82rem;
   --vui-font-size-jumbo: 2rem;
   --vui-font-weight-body: 900;
   --vui-font-weight-title: 900;
@@ -61,7 +65,8 @@
   --vui-color-success: #7f9461;
   --vui-color-warn: #f2c452;
   --vui-color-danger: #a73528;
-  --vui-color-danger-strong: #a73528;
+  /* Alias: never diverged from danger, and as an alias it theme-flips free. */
+  --vui-color-danger-strong: var(--vui-color-danger);
   --vui-color-danger-hover: #7a2820;
   --vui-color-info: #4aa6c8;
   --vui-color-success-soft: rgba(127, 148, 97, 0.18);
@@ -98,30 +103,20 @@
   --vui-modal-close-offset: 11px;
   --vui-modal-resize-edge-size: 8px;
   --vui-modal-resize-corner-size: 28px;
-  --vui-color-success-bg: #effaef;
-  --vui-color-success-border: #c4e5c4;
-  --vui-color-success-text: #2c6b2c;
-  --vui-color-warn-bg: #fff5dc;
-  --vui-color-warn-border: #e8d49a;
-  --vui-color-warn-text: #7a5a10;
-  --vui-color-danger-bg: #fbecec;
-  --vui-color-danger-border: #e6bebe;
-  --vui-color-danger-text: #8a2828;
-  --vui-color-status-neutral-bg: #f4f4f4;
-  --vui-color-status-neutral-border: #ddd;
-  --vui-color-status-neutral-text: #777;
-  --vui-status-success-bg: var(--vui-color-success-bg);
-  --vui-status-success-border: var(--vui-color-success-border);
-  --vui-status-success-text: var(--vui-color-success-text);
-  --vui-status-warn-bg: var(--vui-color-warn-bg);
-  --vui-status-warn-border: var(--vui-color-warn-border);
-  --vui-status-warn-text: var(--vui-color-warn-text);
-  --vui-status-danger-bg: var(--vui-color-danger-bg);
-  --vui-status-danger-border: var(--vui-color-danger-border);
-  --vui-status-danger-text: var(--vui-color-danger-text);
-  --vui-status-neutral-bg: var(--vui-color-status-neutral-bg);
-  --vui-status-neutral-border: var(--vui-color-status-neutral-border);
-  --vui-status-neutral-text: var(--vui-color-status-neutral-text);
+  /* Status surfaces (badge-style bg/border/text trios). --vui-status-* is the
+     ONE name; the parallel --vui-color-<tone>-bg family it once aliased is gone. */
+  --vui-status-success-bg: #effaef;
+  --vui-status-success-border: #c4e5c4;
+  --vui-status-success-text: #2c6b2c;
+  --vui-status-warn-bg: #fff5dc;
+  --vui-status-warn-border: #e8d49a;
+  --vui-status-warn-text: #7a5a10;
+  --vui-status-danger-bg: #fbecec;
+  --vui-status-danger-border: #e6bebe;
+  --vui-status-danger-text: #8a2828;
+  --vui-status-neutral-bg: #f4f4f4;
+  --vui-status-neutral-border: #ddd;
+  --vui-status-neutral-text: #777;
   --vui-color-neutral-black: #000;
   --vui-color-neutral-white: #fff;
   --vui-color-neutral-900: #111;
@@ -151,7 +146,18 @@
   --vui-shadow-popover: 4px 4px 0 var(--vui-color-shadow);
   --vui-shadow-overlay: 8px 8px 0 var(--vui-color-shadow);
   --vui-shadow-hard: 6px 6px 0 var(--vui-color-shadow);
-  --vui-shadow-hard-small: 3px 3px 0 var(--vui-color-text-strong);
+  --vui-shadow-hard-sm: 3px 3px 0 var(--vui-color-text-strong);
+  /* The sanctioned soft shadow: floating depth cues over content (lightbox,
+     drawer edges, slide-in panels). Everything else stays hard-offset. */
+  --vui-shadow-float: 0 8px 24px rgba(0, 0, 0, 0.18);
+  /* Press feedback: controls shift down-right and their shadow collapses to
+     the remainder. One pair of values fleet-wide (BEN-624 follow-up). */
+  --vui-press-shift: 2px;
+  --vui-press-shadow: 2px 2px 0 var(--vui-color-shadow);
+  /* Inset bevel that makes inputs read carved-in; theme-tuned below. */
+  --vui-input-bevel:
+    inset 3px 3px 0 rgba(0, 0, 0, 0.18),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.32);
   /* snap drives press/hover feedback on controls (BEN-624) */
   --vui-motion-snap: 70ms;
   --vui-motion-fast: 120ms;
@@ -170,7 +176,6 @@
   /* Vellum convenience aliases */
   --vui-control-height: 34px;
   --vui-space-6: 24px;
-  --vui-shadow-hard-sm: var(--vui-shadow-hard-small);
   --vui-z-toast: 160;
 }
 
@@ -215,18 +220,24 @@
   --vui-color-shadow: #0a0710;
   --vui-color-input-bg: rgba(0, 0, 0, 0.25);
   --vui-color-input-bg-focus: rgba(0, 0, 0, 0.4);
-  --vui-color-success-bg: #1e2a1e;
-  --vui-color-success-border: #3c5a3c;
-  --vui-color-success-text: #a8d8a8;
-  --vui-color-warn-bg: #2e2614;
-  --vui-color-warn-border: #6a5a28;
-  --vui-color-warn-text: #e8cc7a;
-  --vui-color-danger-bg: #2e1818;
-  --vui-color-danger-border: #6a3434;
-  --vui-color-danger-text: #e89898;
-  --vui-color-status-neutral-bg: #242028;
-  --vui-color-status-neutral-border: #46404f;
-  --vui-color-status-neutral-text: #a298ad;
+  --vui-status-success-bg: #1e2a1e;
+  --vui-status-success-border: #3c5a3c;
+  --vui-status-success-text: #a8d8a8;
+  --vui-status-warn-bg: #2e2614;
+  --vui-status-warn-border: #6a5a28;
+  --vui-status-warn-text: #e8cc7a;
+  --vui-status-danger-bg: #2e1818;
+  --vui-status-danger-border: #6a3434;
+  --vui-status-danger-text: #e89898;
+  --vui-status-neutral-bg: #242028;
+  --vui-status-neutral-border: #46404f;
+  --vui-status-neutral-text: #a298ad;
+  --vui-shadow-float: 0 8px 24px rgba(0, 0, 0, 0.55);
+  /* Darker carve, fainter glint — the light-theme bevel reads embossed on
+     dark surfaces. */
+  --vui-input-bevel:
+    inset 3px 3px 0 rgba(0, 0, 0, 0.5),
+    inset -2px -2px 0 rgba(255, 255, 255, 0.06);
   --vui-color-neutral-black: #f3eefa;
   --vui-color-neutral-900: #e9e2f2;
   --vui-color-neutral-700: #cfc6da;
@@ -312,6 +323,24 @@ body.vui-app {
   outline-offset: var(--vui-focus-ring-offset);
 }
 
+/* Prose links: classless anchors inside a vui app get the canonical inked
+   underline (components that style their own anchors — breadcrumb, btn-link —
+   carry classes and are untouched). .vui-link opts any anchor in explicitly. */
+.vui-app a:not([class]),
+.vui-link {
+  color: var(--vui-color-text-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--vui-color-line);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color var(--vui-motion-fast);
+}
+
+.vui-app a:not([class]):hover,
+.vui-link:hover {
+  text-decoration-color: var(--vui-color-accent);
+}
+
 
 /* primitives.css */
 .btn {
@@ -351,8 +380,8 @@ body.vui-app {
 
 .btn:hover:not(:disabled),
 .ds-force-hover .ds-zoom-stage .btn:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--vui-color-shadow);
+  transform: translate(var(--vui-press-shift), var(--vui-press-shift));
+  box-shadow: var(--vui-press-shadow);
   filter: brightness(1.05);
 }
 
@@ -498,7 +527,7 @@ body.vui-app {
   font-size: var(--vui-font-size-xs);
   line-height: 1;
   min-height: var(--vui-control-height-compact);
-  padding: 6px 10px;
+  padding: var(--vui-control-pad-y) var(--vui-control-pad-x);
   text-decoration: none;
   text-transform: lowercase;
   transition:
@@ -540,9 +569,9 @@ body.vui-app {
   z-index: 1;
 }
 
+/* The ring itself comes from the global :focus-visible rule (base.css);
+   segments only need to climb above their overlapped neighbors. */
 .segment-btn:focus-visible {
-  outline: 2px solid var(--vui-color-text-strong);
-  outline-offset: 2px;
   z-index: 3;
 }
 
@@ -582,8 +611,8 @@ body.vui-app {
   color: var(--vui-color-text-strong);
 }
 
+/* Global ring, pulled inside the row so it isn't clipped by the underline. */
 .tab-btn:focus-visible {
-  outline: 2px solid var(--vui-color-text-strong);
   outline-offset: -2px;
 }
 
@@ -622,9 +651,7 @@ select {
   color: var(--vui-color-text-strong);
   padding: 8px 14px 8px 10px;
   font-family: var(--vui-font-mono);
-  box-shadow:
-    inset 3px 3px 0 rgba(0, 0, 0, 0.18),
-    inset -2px -2px 0 rgba(255, 255, 255, 0.32);
+  box-shadow: var(--vui-input-bevel);
 }
 
 input[type='text']:focus,
@@ -780,7 +807,7 @@ input[type='range']::-webkit-slider-thumb {
   border: var(--vui-border-width) solid var(--vui-color-line-strong);
   border-radius: var(--vui-radius-tight);
   background: var(--vui-color-accent);
-  box-shadow: var(--vui-shadow-hard-small);
+  box-shadow: var(--vui-shadow-hard-sm);
 }
 
 input[type='range']::-moz-range-thumb {
@@ -789,7 +816,7 @@ input[type='range']::-moz-range-thumb {
   border: var(--vui-border-width) solid var(--vui-color-line-strong);
   border-radius: var(--vui-radius-tight);
   background: var(--vui-color-accent);
-  box-shadow: var(--vui-shadow-hard-small);
+  box-shadow: var(--vui-shadow-hard-sm);
 }
 
 input[type='range']:focus-visible {
@@ -897,7 +924,7 @@ input[type='range']:focus-visible {
   inset: 0;
   justify-content: center;
   position: fixed;
-  z-index: 100;
+  z-index: var(--vui-z-modal);
 }
 
 .ui-modal.visible,
@@ -966,7 +993,7 @@ input[type='range']:focus-visible {
 
 .ui-modal-title {
   font-family: var(--vui-font-body);
-  font-size: var(--vui-font-size-sm-plus);
+  font-size: var(--vui-font-size-md);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -1101,7 +1128,7 @@ input[type='range']:focus-visible {
 
 .feedback-capture-title {
   font-family: var(--vui-font-body);
-  font-size: var(--vui-font-size-sm-plus);
+  font-size: var(--vui-font-size-md);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -1236,7 +1263,7 @@ input[type='range']:focus-visible {
   pointer-events: none;
   position: fixed;
   touch-action: none;
-  z-index: 125;
+  z-index: var(--vui-z-feedback-canvas);
 }
 body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canvas {
   cursor: crosshair;
@@ -1268,7 +1295,7 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
   position: fixed;
   right: 16px;
   width: min(var(--feedback-capture-width), calc(100vw - 24px));
-  z-index: 130;
+  z-index: var(--vui-z-feedback);
 }
 .feedback-capture-widget.is-positioned {
   bottom: auto;
@@ -1428,7 +1455,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  z-index: 120;
+  z-index: var(--vui-z-fab);
 }
 .fab-btn {
   display: inline-flex;
@@ -1450,12 +1477,9 @@ body.feedback-capture-capturing .feedback-capture-widget {
 .fab-btn:hover {
   background: var(--vui-color-btn-primary-hover);
   box-shadow: var(--vui-shadow-subtle);
-  transform: translate(2px, 2px);
+  transform: translate(var(--vui-press-shift), var(--vui-press-shift));
 }
-.fab-btn:focus-visible {
-  outline: 2px solid var(--vui-color-text-strong);
-  outline-offset: 2px;
-}
+/* Focus ring comes from the global :focus-visible rule. */
 .fab-glyph {
   font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-base);
@@ -1749,7 +1773,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   background: var(--vui-color-accent-strong);
   color: var(--vui-color-text-inverse);
   border: var(--vui-border-width) solid var(--vui-color-text-strong);
-  box-shadow: var(--vui-shadow-hard-small);
+  box-shadow: var(--vui-shadow-hard-sm);
   font-family: var(--vui-font-mono);
   font-size: var(--vui-font-size-xs);
   font-weight: var(--vui-font-weight-body);
@@ -1905,8 +1929,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
   cursor: default;
 }
 
+/* Global ring, tighter offset for the dense row. */
 .pager-btn:focus-visible {
-  outline: 2px solid var(--vui-color-text-strong);
   outline-offset: 1px;
 }
 
@@ -2066,6 +2090,163 @@ body.feedback-capture-capturing .feedback-capture-widget {
 .card-preview img {
   display: block;
   max-width: 260px;
+}
+
+/* Badge — tiny numeric counter pinned to tabs, buttons, and nav items.
+   Distinct from .ui-chip: a chip names a thing, a badge counts things.
+   Default ink fill; .badge-quiet for resting counts, .badge-accent when the
+   count is the point. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--vui-color-line-strong);
+  border-radius: var(--vui-radius-pill);
+  background: var(--vui-color-text-strong);
+  color: var(--vui-color-text-inverse);
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xxs);
+  font-weight: var(--vui-font-weight-title);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.badge-quiet {
+  background: var(--vui-color-surface-sunken);
+  color: var(--vui-color-text-strong);
+}
+
+.badge-accent {
+  background: var(--vui-color-accent);
+  color: var(--vui-color-text-inverse);
+}
+
+/* Progress — a thin inked bar. Drive it with --progress (a percentage) on
+   the root; the fill carries a faint diagonal hatch so partial fills read
+   at a glance. Markup: <div class="progress" role="progressbar"
+   aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"
+   style="--progress: 62%"><span class="progress-fill"></span></div> */
+.progress {
+  display: block;
+  width: 100%;
+  height: 12px;
+  border: var(--vui-border-width) solid var(--vui-color-line-strong);
+  border-radius: var(--vui-radius-tight);
+  background: var(--vui-color-surface-sunken);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: var(--progress, 0%);
+  background-color: var(--vui-color-accent);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.16) 0 4px,
+    transparent 4px 8px
+  );
+  transition: width var(--vui-motion-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+}
+
+/* Breadcrumb — the navigation trail (binder > page > slot). Current leaf
+   carries aria-current="page" and the strong ink; separators are inert. */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--vui-space-1);
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xs);
+  text-transform: lowercase;
+}
+
+.breadcrumb a {
+  color: var(--vui-color-text-muted);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover,
+.breadcrumb a:focus-visible {
+  color: var(--vui-color-text-strong);
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--vui-color-line);
+  user-select: none;
+}
+
+.breadcrumb [aria-current='page'] {
+  color: var(--vui-color-text-strong);
+  font-weight: var(--vui-font-weight-title);
+}
+
+/* Accordion — styled <details> stack for filter panels and card detail
+   sections. Items share borders like the segmented control; the marker is a
+   mono +/− instead of the UA triangle. */
+.accordion {
+  display: flex;
+  flex-direction: column;
+}
+
+.accordion-item {
+  border: var(--vui-border-width) solid var(--vui-color-line-strong);
+  background: var(--vui-color-surface-raised);
+}
+
+.accordion-item + .accordion-item {
+  border-top: 0;
+}
+
+.accordion-item > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--vui-space-2);
+  padding: var(--vui-space-2) var(--vui-space-3);
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-sm);
+  font-weight: var(--vui-font-weight-title);
+  text-transform: lowercase;
+  color: var(--vui-color-text-strong);
+  user-select: none;
+}
+
+.accordion-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-item > summary::before {
+  content: '+';
+  flex: none;
+  width: 1em;
+  text-align: center;
+  color: var(--vui-color-text-muted);
+}
+
+.accordion-item[open] > summary::before {
+  content: '−';
+}
+
+.accordion-item > summary:hover {
+  background: var(--vui-color-surface-hover);
+}
+
+.accordion-body {
+  padding: 0 var(--vui-space-3) var(--vui-space-3) calc(var(--vui-space-3) + 1em + var(--vui-space-2));
+  font-size: var(--vui-font-size-sm);
+  color: var(--vui-color-text);
 }
 
 
@@ -2781,26 +2962,9 @@ body.vui-lab-page {
   gap: 10px;
 }
 
-.modal-lab-page[data-close-style='quiet'] .modal-lab-preview .rune-close,
-.modal-lab-page[data-close-style='quiet'] .modal-lab-live .rune-close {
-  top: var(--vui-modal-close-offset);
-  right: var(--vui-modal-close-offset);
-  width: var(--vui-modal-close-size);
-  height: var(--vui-modal-close-size);
-  border: var(--vui-modal-close-border);
-  border-radius: var(--vui-modal-close-radius);
-  background: var(--vui-modal-close-bg);
-  box-shadow: var(--vui-modal-close-shadow);
-  color: var(--vui-modal-close-color);
-}
-
-.modal-lab-page[data-close-style='quiet'] .modal-lab-preview .rune-close:hover,
-.modal-lab-page[data-close-style='quiet'] .modal-lab-live .rune-close:hover {
-  transform: none;
-  background: var(--vui-modal-close-hover-bg);
-  box-shadow: var(--vui-modal-close-hover-shadow);
-  color: var(--vui-modal-close-hover-color);
-}
+/* data-close-style='quiet' needs no overrides: quiet IS the production
+   .rune-close (BEN-604). The old override block leaned on --vui-modal-close-*
+   decoration tokens that were never defined — silently a no-op, now gone. */
 
 .modal-lab-page[data-close-style='rune'] .modal-lab-preview .rune-close,
 .modal-lab-page[data-close-style='rune'] .modal-lab-live .rune-close {
@@ -2815,7 +2979,7 @@ body.vui-lab-page {
   background:
     radial-gradient(rgba(242, 196, 82, 0.18) 0 22%, transparent 23%),
     #374269;
-  box-shadow: var(--vui-shadow-hard-small);
+  box-shadow: var(--vui-shadow-hard-sm);
   color: var(--vui-color-warn);
 }
 
