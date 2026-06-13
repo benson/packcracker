@@ -22,8 +22,9 @@ function priceLabel({ amount, text }) {
 // Per-instance placement jitter so a wall of stickers (e.g. a 3x3 binder)
 // doesn't look rubber-stamped. Seeded → stable for a given card across renders;
 // pass jitter:true for fresh randomness, or { seed, x, y, rot } to tune ranges
-// (defaults ±5px / ±5px / ±3deg). Returns the --price-jitter-* values.
-const DEFAULT_JITTER = { x: 5, y: 5, rot: 3 };
+// (defaults ±5px / ±5px / ±5deg — rotation swings to either side of flat).
+// Returns the --price-jitter-* values.
+const DEFAULT_JITTER = { x: 5, y: 5, rot: 5 };
 
 function hashSeed(value) {
   const s = String(value);
