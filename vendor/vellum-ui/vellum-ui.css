@@ -2063,9 +2063,11 @@ body.feedback-capture-capturing .feedback-capture-widget {
    up-right and long ones fill across.
 
    JITTER: --price-jitter-x/-y (px) and --price-jitter-rot (deg) nudge each
-   instance off the base placement so a 3x3 binder doesn't look rubber-stamped.
-   Default 0; priceStickerNode/priceStickerHtml seed them per card so the
-   placement is varied but stable across re-renders. */
+   instance so a 3x3 binder doesn't look rubber-stamped. Rotation is centred on
+   flat — the jitter swings it to either side (default ±5deg), so stickers land
+   flat, leaning left, or leaning right. Default 0 (flat, un-jittered);
+   priceStickerNode/priceStickerHtml seed them per card so the placement is
+   varied but stable across re-renders. */
 .card-sleeve-price {
   --price-tag-w: 0.248;
   --price-tag-h: 0.154;
@@ -2085,9 +2087,10 @@ body.feedback-capture-capturing .feedback-capture-widget {
   /* inset of the print from the bottom-left corner of the fixed label */
   padding: 0 calc(var(--card-sleeve-width) * 0.03) calc(var(--card-sleeve-width) * 0.03)
     calc(var(--card-sleeve-width) * 0.004);
-  /* base placement + per-instance jitter (translate first, in card space) */
+  /* placement jitter (translate first, in card space); rotation sits at flat so
+     the jitter swings it to either side — see --price-jitter-rot */
   transform: translate(var(--price-jitter-x), var(--price-jitter-y))
-    rotate(calc(-5.5deg + var(--price-jitter-rot)));
+    rotate(var(--price-jitter-rot));
   font-family: 'vui-price-label', Consolas, 'Courier New', monospace;
   font-size: calc(var(--card-sleeve-width) * 0.058);
   font-weight: 550;
