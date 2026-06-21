@@ -15,10 +15,9 @@ import { mountFeedbackCapture } from './vendor/vellum-ui/feedbackCapture.js';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
 
-// Owner feedback: files to the packcracker Linear project via the biblioplex
-// worker. Only mounts on machines holding the owner key (?feedback-key=<key>).
+// Feedback: files to the packcracker Linear project via the biblioplex worker.
+// Shows for everyone; the worker gates submissions on the site origin.
 mountFeedbackCapture({
-  requireOwnerKey: true,
   project: 'packcracker',
   apiUrl: 'https://biblioplex-api.bensonperry.com',
 });
