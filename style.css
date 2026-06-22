@@ -438,8 +438,45 @@ select:disabled {
   color: var(--text-muted);
 }
 
+.theme-toggle.active {
+  color: var(--text);
+}
+
+/* group the language + theme toggles top-right of the header */
+.header-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.header-actions .theme-toggle {
+  position: static;
+}
+
 .theme-icon {
   margin-right: 4px;
+}
+
+/* japanese tcgplayer listing link — revealed only while card language is japanese */
+.jp-link {
+  display: none;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.jp-link:hover {
+  color: var(--text);
+  border-bottom-color: var(--border);
+}
+
+body.jp-mode .jp-link {
+  display: inline-block;
 }
 
 /* credits footer — static at document end (shared fixed styles opted out

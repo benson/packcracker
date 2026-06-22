@@ -68,6 +68,12 @@ function getCurrentState() {
 let setsData = [];
 let selectedSetDisplay = '';
 
+// Card language toggle — swaps card art to the japanese printing (matched by
+// collector number). Prices stay english; scryfall has no japanese prices.
+let jpMode = false;
+const jpImageCache = new Map();   // setCode -> Map(collector_number -> ja image url)
+let currentJpImages = new Map();
+
 // ============ Toggle Buttons ============
 
 // Helper to set up a toggle button group
@@ -474,6 +480,92 @@ function calculatePackEV(cards) {
   return expanded.reduce((ev, card) => ev + (card.price * (card.packOdds || 0)), 0);
 }
 
+// ============ Card Language (Japanese art) ============
+
+// Fetch japanese-language card images for a set, keyed by collector number.
+// Only swaps art — prices stay english (scryfall carries no japanese prices).
+async function fetchJapaneseImages(setCode) {
+  if (jpImageCache.has(setCode)) return jpImageCache.get(setCode);
+
+  const map = new Map();
+  try {
+    let url = SCRYFALL_API + '/cards/search?q=' +
+      encodeURIComponent('set:' + setCode + ' lang:ja') + '&unique=prints';
+    while (url) {
+      const data = await fetchWithRetry(url);
+      for (const card of (data.data || [])) {
+        const img = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal;
+        if (img) map.set(card.collector_number, img);
+      }
+      url = data.has_more ? data.next_page : null;
+    }
+  } catch (e) {
+    // no japanese printings for this set (404) — leave map empty
+  }
+
+  jpImageCache.set(setCode, map);
+  return map;
+}
+
+// Swap rendered card images between english (data-en-src) and japanese
+function applyImageLanguage() {
+  document.querySelectorAll('#card-grid .card').forEach(cardEl => {
+    const img = cardEl.querySelector('.card-img');
+    if (!img) return;
+    const en = img.dataset.enSrc;
+    if (jpMode) {
+      const ja = currentJpImages.get(cardEl.dataset.cn);
+      img.src = ja || en;
+      cardEl.classList.toggle('jp-missing', !ja);
+    } else {
+      img.src = en;
+      cardEl.classList.remove('jp-missing');
+    }
+  });
+}
+
+async function setJpMode(on) {
+  jpMode = on;
+  document.body.classList.toggle('jp-mode', on);
+  updateLangToggle();
+  if (on) {
+    const setCode = document.getElementById('set-select').value;
+    currentJpImages = await fetchJapaneseImages(setCode);
+  }
+  applyImageLanguage();
+}
+
+function updateLangToggle() {
+  const btn = document.getElementById('lang-toggle');
+  if (!btn) return;
+  btn.classList.toggle('active', jpMode);
+  btn.innerHTML = jpMode
+    ? '<span class="theme-icon">あ</span> 日本語'
+    : '<span class="theme-icon">あ</span> english';
+}
+
+function initLang() {
+  const btn = document.getElementById('lang-toggle');
+  if (btn) btn.addEventListener('click', () => setJpMode(!jpMode));
+
+  document.addEventListener('keydown', (e) => {
+    if (!e.key || e.key.toLowerCase() !== 'j' || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+    setJpMode(!jpMode);
+  });
+
+  updateLangToggle();
+}
+
+// Build a tcgplayer search url pre-filtered to japanese listings for a single card
+function getJpListingUrl(card, setInfo) {
+  const terms = card.name + (setInfo ? ' ' + setInfo.name : '');
+  return 'https://www.tcgplayer.com/search/magic/product?productLineName=magic&q=' +
+    encodeURIComponent(terms) + '&Language=Japanese&view=grid';
+}
+
 // ============ Rendering ============
 
 function getTcgPlayerUrl(setName, boosterType) {
@@ -536,19 +628,23 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
       ? '<div class="card-treatment">' + treatment + '</div>'
       : '';
 
-    return '<div class="card" data-url="' + scryfallUrl + '">' +
-      '<div class="card-image"><img class="card-img" src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" /></div>' +
+    const jpUrl = getJpListingUrl(card, setInfo);
+
+    return '<div class="card" data-url="' + scryfallUrl + '" data-cn="' + (card.collector_number || '') + '">' +
+      '<div class="card-image"><img class="card-img" src="' + imageUrl + '" data-en-src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" /></div>' +
       '<div class="card-info">' +
         '<div class="card-name" title="' + card.name + '">' + card.name.toLowerCase() + '</div>' +
         '<div class="card-prices">' + priceItems.join(' · ') + '</div>' +
         treatmentLine +
+        '<a class="jp-link" href="' + jpUrl + '" target="_blank" rel="noopener">jp listings ↗</a>' +
       '</div>' +
     '</div>';
   }).join('');
 
   grid.querySelectorAll('.card').forEach(card => {
     card.style.cursor = 'pointer';
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.jp-link')) return;
       window.open(card.dataset.url, '_blank');
     });
   });
@@ -561,6 +657,9 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
       img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
     }
   });
+
+  // keep card art in the selected language after a re-render
+  applyImageLanguage();
 }
 
 function setLoading(loading) {
@@ -618,6 +717,12 @@ async function loadCards() {
     const cards = filterAndSortCards(allCards, minPrice, excludeRares, excludeFoils);
     const setInfo = setsData.find(s => s.code === setCode);
     renderCards(cards, allCards, setInfo, boosterType);
+
+    // refresh japanese art for the current set if the toggle is on
+    if (jpMode) {
+      currentJpImages = await fetchJapaneseImages(setCode);
+      applyImageLanguage();
+    }
   } catch (error) {
     console.error('Error loading cards:', error);
     showError('failed to load cards. please try again.');
@@ -765,4 +870,5 @@ function applyTheme(theme) {
 }
 
 initTheme();
+initLang();
 init();
