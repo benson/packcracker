@@ -416,30 +416,19 @@ select:disabled {
   display: none !important;
 }
 
-/* theme toggle — absolute in the header so it scrolls away with it */
+/* theme toggle — a vellum .switch, absolute in the header so it scrolls away with it */
 .theme-toggle {
   position: absolute;
   top: 0;
   right: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-family: inherit;
   font-size: 0.75rem;
   color: var(--text-faint);
-  cursor: pointer;
   text-transform: lowercase;
-  transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .theme-toggle:hover {
   color: var(--text-muted);
-}
-
-.theme-icon {
-  margin-right: 4px;
 }
 
 /* japanese tcgplayer listing link — revealed only while card language is japanese */

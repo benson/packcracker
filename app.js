@@ -12,6 +12,7 @@ import {
 } from 'https://bensonperry.com/shared/mtg.js';
 import { combobox } from './vendor/vellum-ui/combobox.js';
 import { mountFeedbackCapture } from './vendor/vellum-ui/feedbackCapture.js';
+import { initTheme, themeToggle } from './vendor/vellum-ui/themeToggle.js';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
 
@@ -825,35 +826,10 @@ function handleSetSelect(set) {
 }
 
 // ============ Theme Toggle ============
+// Dark mode rides vellum's [data-theme] layer; the preference stays under the
+// legacy 'theme' storage key so existing users keep their setting.
+initTheme({ storageKey: 'theme' });
+themeToggle(document.getElementById('theme-toggle-input'), { storageKey: 'theme' });
 
-function initTheme() {
-  const toggle = document.getElementById('theme-toggle');
-  const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  // Apply saved theme or system preference
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  applyTheme(theme);
-
-  toggle.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    localStorage.setItem('theme', next);
-  });
-}
-
-function applyTheme(theme) {
-  const toggle = document.getElementById('theme-toggle');
-  if (theme === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    toggle.innerHTML = '<span class="theme-icon">☀</span> light';
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-    toggle.innerHTML = '<span class="theme-icon">☽</span> dark';
-  }
-}
-
-initTheme();
 initLang();
 init();
