@@ -527,7 +527,6 @@ function applyImageLanguage() {
 async function setJpMode(on) {
   jpMode = on;
   document.body.classList.toggle('jp-mode', on);
-  updateLangToggle();
   if (on) {
     const setCode = document.getElementById('set-select').value;
     currentJpImages = await fetchJapaneseImages(setCode);
@@ -535,19 +534,7 @@ async function setJpMode(on) {
   applyImageLanguage();
 }
 
-function updateLangToggle() {
-  const btn = document.getElementById('lang-toggle');
-  if (!btn) return;
-  btn.classList.toggle('active', jpMode);
-  btn.innerHTML = jpMode
-    ? '<span class="theme-icon">あ</span> 日本語'
-    : '<span class="theme-icon">あ</span> english';
-}
-
 function initLang() {
-  const btn = document.getElementById('lang-toggle');
-  if (btn) btn.addEventListener('click', () => setJpMode(!jpMode));
-
   document.addEventListener('keydown', (e) => {
     if (!e.key || e.key.toLowerCase() !== 'j' || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target;
@@ -555,8 +542,6 @@ function initLang() {
     e.preventDefault();
     setJpMode(!jpMode);
   });
-
-  updateLangToggle();
 }
 
 // Build a tcgplayer search url pre-filtered to japanese listings for a single card

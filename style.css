@@ -438,24 +438,6 @@ select:disabled {
   color: var(--text-muted);
 }
 
-.theme-toggle.active {
-  color: var(--text);
-}
-
-/* group the language + theme toggles top-right of the header */
-.header-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.header-actions .theme-toggle {
-  position: static;
-}
-
 .theme-icon {
   margin-right: 4px;
 }
