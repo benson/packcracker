@@ -22,7 +22,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="https://bensonperry.com/shared/common.css">
   <link rel="stylesheet" href="vendor/vellum-ui/vellum-ui.css?v=dbeee8ee947a">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body class="no-shared-footer">
   <div class="container">
@@ -111,7 +111,13 @@
       <span>loading cards...</span>
     </div>
 
-    <div id="card-count" class="card-count hidden"></div>
+    <div id="results-bar" class="results-bar hidden">
+      <div id="card-count" class="card-count"></div>
+      <div class="card-filter-wrapper">
+        <input type="text" id="card-filter" class="card-filter" placeholder="filter cards…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button type="button" id="card-filter-clear" class="card-filter-clear hidden" aria-label="clear filter">&times;</button>
+      </div>
+    </div>
 
     <div id="card-grid" class="card-grid"></div>
 
@@ -123,6 +129,6 @@
     <span>booster data by <a href="https://mtgjson.com">mtgjson</a>; images, prices, and links by <a href="https://scryfall.com">scryfall</a></span>
   </footer>
 
-  <script type="module" src="app.js?v=1"></script>
+  <script type="module" src="app.js?v=2"></script>
 </body>
 </html>

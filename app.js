@@ -69,6 +69,9 @@ function getCurrentState() {
 let setsData = [];
 let selectedSetDisplay = '';
 
+// Quick "is this card in the list" search over the currently rendered cards.
+let currentRenderedCards = [];
+
 // Card language toggle — swaps card art to the japanese printing (matched by
 // collector number). Prices stay english; scryfall has no japanese prices.
 let jpMode = false;
@@ -567,8 +570,12 @@ function getTcgPlayerUrl(setName, boosterType) {
 
 function renderCards(cards, rawCards, setInfo, boosterType) {
   const grid = document.getElementById('card-grid');
+  const resultsBar = document.getElementById('results-bar');
   const countEl = document.getElementById('card-count');
   const evEl = document.getElementById('pack-ev');
+
+  currentRenderedCards = cards;
+  resetCardFilter();
 
   // Calculate pack EV from raw cards (before filtering)
   const packEV = calculatePackEV(rawCards);
@@ -588,12 +595,12 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
         '<h3>no cards found</h3>' +
         '<p>try lowering the minimum price or switching booster type</p>' +
       '</div>';
-    countEl.classList.add('hidden');
+    resultsBar.classList.add('hidden');
     return;
   }
 
   countEl.textContent = 'showing ' + cards.length + ' card' + (cards.length === 1 ? '' : 's');
-  countEl.classList.remove('hidden');
+  resultsBar.classList.remove('hidden');
 
   grid.innerHTML = cards.map(card => {
     const imageUrl = card.image_uris?.normal ||
@@ -616,7 +623,9 @@ function renderCards(cards, rawCards, setInfo, boosterType) {
 
     const jpUrl = getJpListingUrl(card, setInfo);
 
-    return '<div class="card" data-url="' + scryfallUrl + '" data-cn="' + (card.collector_number || '') + '">' +
+    const filterName = (card.name + ' ' + (card.printed_name || '')).toLowerCase();
+
+    return '<div class="card" data-url="' + scryfallUrl + '" data-cn="' + (card.collector_number || '') + '" data-filter-name="' + filterName.replace(/"/g, '&quot;') + '">' +
       '<div class="card-image"><img class="card-img" src="' + imageUrl + '" data-en-src="' + imageUrl + '" alt="' + card.name + '" loading="lazy" /></div>' +
       '<div class="card-info">' +
         '<div class="card-name" title="' + card.name + '">' + card.name.toLowerCase() + '</div>' +
@@ -652,7 +661,7 @@ function setLoading(loading) {
   document.getElementById('loading').classList.toggle('hidden', !loading);
   document.getElementById('card-grid').classList.toggle('hidden', loading);
   if (loading) {
-    document.getElementById('card-count').classList.add('hidden');
+    document.getElementById('results-bar').classList.add('hidden');
     // EV placeholder while computing — never a plausible-but-false $0.00
     const evEl = document.getElementById('pack-ev');
     evEl.innerHTML = '<span class="ev-label">pack ev</span><span class="ev-value">—</span>';
@@ -665,8 +674,82 @@ function showError(message) {
   errorEl.textContent = message;
   errorEl.classList.remove('hidden');
   document.getElementById('card-grid').classList.add('hidden');
-  document.getElementById('card-count').classList.add('hidden');
+  document.getElementById('results-bar').classList.add('hidden');
   document.getElementById('pack-ev').classList.add('hidden');
+}
+
+// ============ Card Filter (quick "is this card in the list" search) ============
+
+// Clears the filter input and shows all rendered cards — called whenever the
+// list is re-rendered (set/list/booster/etc change) so a stale query doesn't
+// silently hide cards from a new list.
+function resetCardFilter() {
+  const filterInput = document.getElementById('card-filter');
+  if (filterInput) filterInput.value = '';
+  document.getElementById('card-filter-clear').classList.add('hidden');
+  applyCardFilter('');
+}
+
+function applyCardFilter(query) {
+  const grid = document.getElementById('card-grid');
+  const countEl = document.getElementById('card-count');
+  const q = query.trim().toLowerCase();
+
+  const cardEls = grid.querySelectorAll('.card');
+  if (cardEls.length === 0) return; // no-results state — nothing to filter
+
+  let visible = 0;
+  cardEls.forEach(el => {
+    const match = !q || (el.dataset.filterName || '').includes(q);
+    el.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+
+  const total = currentRenderedCards.length;
+  if (!q) {
+    countEl.textContent = 'showing ' + total + ' card' + (total === 1 ? '' : 's');
+  } else {
+    countEl.textContent = 'showing ' + visible + ' of ' + total + ' card' + (total === 1 ? '' : 's');
+  }
+
+  let emptyEl = grid.querySelector('.no-filter-results');
+  if (visible === 0 && q) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('div');
+      emptyEl.className = 'no-results no-filter-results';
+      emptyEl.innerHTML = '<h3>no matching cards</h3><p>try a different search</p>';
+      grid.appendChild(emptyEl);
+    }
+    emptyEl.classList.remove('hidden');
+  } else if (emptyEl) {
+    emptyEl.classList.add('hidden');
+  }
+}
+
+function initCardFilter() {
+  const filterInput = document.getElementById('card-filter');
+  const clearBtn = document.getElementById('card-filter-clear');
+
+  filterInput.addEventListener('input', () => {
+    clearBtn.classList.toggle('hidden', !filterInput.value);
+    applyCardFilter(filterInput.value);
+  });
+
+  filterInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && filterInput.value) {
+      e.preventDefault();
+      filterInput.value = '';
+      clearBtn.classList.add('hidden');
+      applyCardFilter('');
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    filterInput.value = '';
+    clearBtn.classList.add('hidden');
+    applyCardFilter('');
+    filterInput.focus();
+  });
 }
 
 // ============ Main Logic ============
@@ -737,6 +820,7 @@ async function init() {
     setupSetCombobox(setInput, setHidden);
 
     setupToggles();
+    initCardFilter();
     setInput.disabled = false;
     setInput.placeholder = 'type to search sets...';
 

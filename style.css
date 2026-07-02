@@ -324,10 +324,70 @@ select:disabled {
   text-underline-offset: 4px;
 }
 
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 .card-count {
   color: var(--text-faint);
-  margin-bottom: 20px;
   font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.card-filter-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.card-filter {
+  padding: 6px 20px 6px 0;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  width: 200px;
+  text-transform: lowercase;
+  outline: none;
+  box-shadow: none;
+}
+
+.card-filter:hover {
+  border-bottom-color: var(--text-muted);
+}
+
+.card-filter:focus {
+  border-bottom-width: 2px;
+}
+
+.card-filter::placeholder {
+  color: var(--text-faint);
+  text-transform: lowercase;
+}
+
+.card-filter-clear {
+  position: absolute;
+  right: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0 2px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.card-filter-clear:hover {
+  color: var(--text-muted);
 }
 
 .card-grid {
@@ -551,6 +611,11 @@ footer.site-footer a:hover {
 
   .grid-toggle-group {
     display: flex;
+  }
+
+  .card-filter {
+    width: 100%;
+    font-size: 16px; /* Prevents iOS zoom on focus */
   }
 
   .card-grid {
