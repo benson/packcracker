@@ -104,7 +104,7 @@ function renderModalLab(target) {
   if (!target) return;
   target.append(header(), shell());
   target.querySelectorAll('.modal-lab-preview .ui-modal-card').forEach((card) => makeModalInteractive(card, { centeredX: false, centeredY: false }));
-  liveApi = modal(document.getElementById('modalLabLive'), { interactive: true });
+  liveApi = modal(document.getElementById('modalLabLive'));
   applyState();
 }
 

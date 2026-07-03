@@ -12,6 +12,29 @@ const DRAG_BLOCK_SELECTOR = [
   '[data-vui-modal-resize-handle]',
 ].join(',');
 
+// Every headed modal gets a close ✕ without per-consumer markup: inject a
+// rune-close into .ui-modal-head when nothing already matches the close
+// selector. Re-init is naturally idempotent — the injected button matches
+// the selector on the next pass.
+function ensureModalCloseButton(modalEl, closeSelector) {
+  const head = modalEl.querySelector?.('.ui-modal-head');
+  if (!head || modalEl.querySelector(closeSelector)) return;
+  const doc = modalEl.ownerDocument;
+  if (typeof doc?.createElement !== 'function') return;
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.className = 'rune-close';
+  button.setAttribute('aria-label', 'close');
+  button.setAttribute('data-modal-close', '');
+  const glyph = doc.createElement('span');
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.textContent = '✕';
+  button.appendChild(glyph);
+  // a custom closeSelector that wouldn't wire this button means no injection
+  if (!button.matches(closeSelector)) return;
+  head.appendChild(button);
+}
+
 export function modal(modalEl, options = {}) {
   if (!modalEl) return { open() {}, close() {}, toggle() {}, destroy() {}, isOpen: () => false };
 
@@ -29,8 +52,10 @@ export function modal(modalEl, options = {}) {
   } = options;
   let destroyed = false;
 
+  ensureModalCloseButton(modalEl, closeSelector);
+
   const interaction =
-    options.interactive !== true
+    options.interactive === false
       ? null
       : makeModalInteractive(modalEl, {
           cardSelector: options.cardSelector,
