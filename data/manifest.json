@@ -1,9 +1,9 @@
 {
-  "updated": "2026-07-03T11:43:51.184Z",
+  "updated": "2026-07-04T11:02:20.336Z",
   "source": "mtgjson+scryfall",
   "mode": "incremental",
-  "selected": 3,
-  "sets": 3,
+  "selected": 2,
+  "sets": 2,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
@@ -11,8 +11,7 @@
   "maxTargets": 25,
   "refreshed": [
     "msh",
-    "sos",
-    "tmt"
+    "sos"
   ],
   "failed": []
 }
