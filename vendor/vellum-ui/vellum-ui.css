@@ -635,6 +635,9 @@ body.vui-app {
   color: var(--vui-color-neutral-black);
 }
 
+/* .field-chrome (BEN-692): the field visual for elements that are not real form
+   controls — e.g. a <button> popover trigger that should read as a field.
+   Carries chrome only; consumers own layout, cursor, and arrow affordances. */
 input[type='text'],
 input[type='search'],
 input[type='number'],
@@ -644,7 +647,8 @@ input[type='tel'],
 input[type='password'],
 input:not([type]),
 textarea,
-select {
+select,
+.field-chrome {
   border: var(--vui-border-width) solid var(--vui-color-line-strong);
   border-radius: var(--vui-radius-sharp);
   background: var(--vui-color-surface-raised);
@@ -663,7 +667,9 @@ input[type='tel']:focus,
 input[type='password']:focus,
 input:not([type]):focus,
 textarea:focus,
-select:focus {
+select:focus,
+.field-chrome:focus,
+.field-chrome:hover {
   outline: none;
   border-color: var(--vui-color-line-focus);
 }
