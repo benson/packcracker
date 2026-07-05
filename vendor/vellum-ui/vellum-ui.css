@@ -1656,6 +1656,14 @@ body.feedback-capture-capturing .feedback-capture-widget {
   }
 }
 
+/* Any component class that sets display must pair it with a [hidden] guard:
+   author display rules beat the UA's [hidden]{display:none} regardless of
+   specificity, silently breaking the DOM's native hide mechanism for
+   consumers (biblioplex BEN-703 — a dismissed banner that stayed rendered). */
+.banner[hidden] {
+  display: none;
+}
+
 .banner {
   align-items: center;
   background: var(--vui-color-surface-sunken);
