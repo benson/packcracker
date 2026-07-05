@@ -291,6 +291,17 @@ body.vui-app {
   display: none !important;
 }
 
+/* One guard for the native hidden attribute/property, not a per-class patch.
+   Author display rules (flex/grid on a component class) otherwise beat the
+   UA's [hidden]{display:none} regardless of specificity, silently breaking
+   the DOM's native hide mechanism for any component that also sets display
+   (biblioplex BEN-703/BEN-684/BEN-687 — a dismissed banner/popover/menu that
+   stayed rendered). This supersedes the per-class [hidden] guards that used
+   to live next to each component below. */
+[hidden] {
+  display: none !important;
+}
+
 .vui-stack {
   display: flex;
   flex-direction: column;
@@ -1171,9 +1182,7 @@ input[type='range']:focus-visible {
   padding: var(--vui-space-2);
 }
 
-.ui-popover[hidden] {
-  display: none !important;
-}
+/* [hidden] handled globally in base.css. */
 
 .floating-menu {
   display: flex;
@@ -1223,9 +1232,7 @@ input[type='range']:focus-visible {
   box-shadow: var(--vui-shadow-popover);
 }
 
-.combobox-list[hidden] {
-  display: none !important;
-}
+/* [hidden] handled globally in base.css. */
 
 .combobox-option {
   appearance: none;
@@ -1307,8 +1314,7 @@ body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canva
 .feedback-capture-widget.is-resizing {
   user-select: none;
 }
-.feedback-capture-widget[hidden],
-.feedback-annotation-canvas[hidden],
+/* [hidden] handled globally in base.css. */
 body.feedback-capture-capturing .feedback-capture-widget {
   display: none;
 }
@@ -1656,14 +1662,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   }
 }
 
-/* Any component class that sets display must pair it with a [hidden] guard:
-   author display rules beat the UA's [hidden]{display:none} regardless of
-   specificity, silently breaking the DOM's native hide mechanism for
-   consumers (biblioplex BEN-703 — a dismissed banner that stayed rendered). */
-.banner[hidden] {
-  display: none;
-}
-
+/* [hidden] handled globally in base.css. */
 .banner {
   align-items: center;
   background: var(--vui-color-surface-sunken);
