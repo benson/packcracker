@@ -1209,6 +1209,24 @@ input[type='range']:focus-visible {
   background: var(--vui-color-accent-soft);
 }
 
+/* Fly-out submenu with safe-triangle hover-intent. The wrapper holds an
+   [aria-haspopup] trigger and a sibling [role="menu"] submenu; floatingMenu's
+   hoverIntent toggles .is-submenu-open on the wrapper. Kept display:none by
+   default (not just off-screen) so keyboard/focus reveal via :focus-within
+   still works for consumers that don't opt into hoverIntent. */
+.floating-submenu-wrap > .floating-submenu {
+  position: absolute;
+  left: 100%;
+  top: calc(-1 * var(--vui-space-1));
+  margin-left: var(--vui-space-1);
+  display: none;
+  z-index: 1;
+}
+.floating-submenu-wrap.is-submenu-open > .floating-submenu,
+.floating-submenu-wrap:focus-within > .floating-submenu {
+  display: flex;
+}
+
 .combobox {
   position: relative;
   display: inline-block;

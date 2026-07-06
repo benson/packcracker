@@ -1,7 +1,11 @@
 import { outsideClick } from './outsideClick.js';
+import { isMovingTowardSubmenu } from './safeTriangle.js';
 
 const ROW_CONTEXT_MENU_EDGE_BUFFER_PX = 8;
 const DEFAULT_GAP_PX = 4;
+const HOVER_INTENT_DEFAULT_DELAY_MS = 220;
+const HOVER_INTENT_DEFAULT_THRESHOLD_PX = 4;
+const SUBMENU_OPEN_CLASS = 'is-submenu-open';
 
 function menuItems(menuEl) {
   return Array.from(menuEl?.querySelectorAll?.('[role="menuitem"]:not([disabled])') || []);
@@ -76,6 +80,124 @@ function positionMenu(triggerEl, menuEl, options) {
   menuEl.style.bottom = 'auto';
 }
 
+// Find the submenu wrappers inside a menu: each is a `[aria-haspopup="true"]`
+// trigger paired with a sibling `[role="menu"]` submenu, both under a common
+// wrapper element. Framework-agnostic — driven by ARIA, not app-specific class
+// names — so any consumer that marks its submenus this way gets hover-intent.
+function findSubmenuWraps(menuEl) {
+  const triggers = Array.from(menuEl?.querySelectorAll?.('[aria-haspopup="true"]') || []);
+  const wraps = [];
+  for (const trigger of triggers) {
+    const wrap = trigger.parentElement;
+    if (!wrap) continue;
+    const submenu = wrap.querySelector(':scope > [role="menu"]');
+    if (submenu) wraps.push({ wrap, trigger, submenu });
+  }
+  return wraps;
+}
+
+// Wire safe-triangle hover-intent onto a menu's submenus. Returns a cleanup fn.
+// The submenu open state is driven by an `is-submenu-open` class on the wrapper
+// (which consumer CSS reveals), taking over from the fragile pure-`:hover`
+// rule: once open, the submenu stays open while the pointer path stays inside
+// the triangle toward it, and only closes after `delay` ms of the pointer
+// clearly heading elsewhere. Focus-within still opens it for keyboard users.
+function attachHoverIntent(menuEl, config) {
+  const doc = menuEl.ownerDocument;
+  const win = doc?.defaultView || globalThis;
+  const delay = Number.isFinite(config?.delay) ? config.delay : HOVER_INTENT_DEFAULT_DELAY_MS;
+  const threshold = Number.isFinite(config?.threshold)
+    ? config.threshold
+    : HOVER_INTENT_DEFAULT_THRESHOLD_PX;
+  const wraps = findSubmenuWraps(menuEl);
+  if (!wraps.length) return () => {};
+
+  const cleanups = [];
+  for (const { wrap, trigger, submenu } of wraps) {
+    let closeTimer = null;
+    let anchor = null; // pointer position when it left the trigger
+
+    const openSub = () => {
+      if (closeTimer) {
+        win.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      wrap.classList.add(SUBMENU_OPEN_CLASS);
+    };
+    const closeSub = () => {
+      if (closeTimer) {
+        win.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      wrap.classList.remove(SUBMENU_OPEN_CLASS);
+      anchor = null;
+    };
+    const scheduleClose = () => {
+      if (closeTimer) return;
+      closeTimer = win.setTimeout(() => {
+        closeTimer = null;
+        wrap.classList.remove(SUBMENU_OPEN_CLASS);
+        anchor = null;
+      }, delay);
+    };
+
+    const onTriggerEnter = () => openSub();
+    const onTriggerLeave = (event) => {
+      anchor = { x: event.clientX, y: event.clientY };
+    };
+    // While the submenu is open, track pointer moves anywhere in the wrapper's
+    // vicinity: if the pointer is inside the safe triangle toward the submenu,
+    // keep it open; otherwise start the close countdown.
+    const onDocMove = (event) => {
+      if (!wrap.classList.contains(SUBMENU_OPEN_CLASS)) return;
+      const point = { x: event.clientX, y: event.clientY };
+      // Pointer over the submenu or its trigger → stay open, reset anchor.
+      if (submenu.contains(event.target) || trigger.contains(event.target)) {
+        openSub();
+        return;
+      }
+      const rect = submenu.getBoundingClientRect();
+      const start = anchor || { x: trigger.getBoundingClientRect().right, y: point.y };
+      if (isMovingTowardSubmenu(start, point, rect, { buffer: threshold })) {
+        // Still heading toward it — hold open, don't reset the timer to zero so
+        // a stalled cursor eventually closes.
+        if (!closeTimer) return;
+        return;
+      }
+      scheduleClose();
+    };
+    const onSubEnter = () => openSub();
+    const onSubLeave = () => scheduleClose();
+    const onFocusIn = () => openSub();
+    const onFocusOut = (event) => {
+      if (!wrap.contains(event.relatedTarget)) scheduleClose();
+    };
+
+    trigger.addEventListener('pointerenter', onTriggerEnter);
+    trigger.addEventListener('pointerleave', onTriggerLeave);
+    submenu.addEventListener('pointerenter', onSubEnter);
+    submenu.addEventListener('pointerleave', onSubLeave);
+    wrap.addEventListener('focusin', onFocusIn);
+    wrap.addEventListener('focusout', onFocusOut);
+    doc.addEventListener('pointermove', onDocMove, true);
+
+    cleanups.push(() => {
+      closeSub();
+      trigger.removeEventListener('pointerenter', onTriggerEnter);
+      trigger.removeEventListener('pointerleave', onTriggerLeave);
+      submenu.removeEventListener('pointerenter', onSubEnter);
+      submenu.removeEventListener('pointerleave', onSubLeave);
+      wrap.removeEventListener('focusin', onFocusIn);
+      wrap.removeEventListener('focusout', onFocusOut);
+      doc.removeEventListener('pointermove', onDocMove, true);
+    });
+  }
+
+  return () => {
+    for (const fn of cleanups) fn();
+  };
+}
+
 export function floatingMenu(triggerEl, menuEl, options = {}) {
   if (!triggerEl || !menuEl) {
     return { open: () => {}, close: () => {}, isOpen: () => false, destroy: () => {} };
@@ -88,6 +210,15 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
   let cleanupEscape = null;
   let cleanupScroll = null;
   let cleanupResize = null;
+  let cleanupHoverIntent = null;
+  // Off by default: only wire hover-intent when a consumer opts in. Accepts
+  // `true` or an object `{ delay, threshold }`.
+  const hoverIntentConfig =
+    options.hoverIntent === true
+      ? {}
+      : options.hoverIntent && typeof options.hoverIntent === 'object'
+        ? options.hoverIntent
+        : null;
 
   const close = ({ restoreFocus = true } = {}) => {
     if (!open) return;
@@ -99,11 +230,13 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     if (typeof cleanupEscape === 'function') cleanupEscape();
     if (typeof cleanupScroll === 'function') cleanupScroll();
     if (typeof cleanupResize === 'function') cleanupResize();
+    if (typeof cleanupHoverIntent === 'function') cleanupHoverIntent();
     cleanupOutside = null;
     cleanupOutsideClick = null;
     cleanupEscape = null;
     cleanupScroll = null;
     cleanupResize = null;
+    cleanupHoverIntent = null;
     options.onClose?.();
     if (restoreFocus && doc?.activeElement && menuEl.contains(doc.activeElement)) {
       triggerEl.focus?.();
@@ -146,6 +279,10 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     options.onOpen?.();
     if (focusFirst && options.keyboard !== false) {
       menuItems(menuEl)[0]?.focus?.();
+    }
+
+    if (hoverIntentConfig) {
+      cleanupHoverIntent = attachHoverIntent(menuEl, hoverIntentConfig);
     }
 
     if (closeOn.has('outside')) {

@@ -5,6 +5,12 @@ export { defaultSnapClosedAt, edgeResize, resolveEdgeDrag } from './edgeResize.j
 export { outsideClick } from './outsideClick.js';
 export { popover } from './popover.js';
 export { floatingMenu, moveFloatingMenuFocus } from './floatingMenu.js';
+export {
+  isMovingTowardSubmenu,
+  pointInTriangle,
+  submenuLeadingEdge,
+  submenuSide,
+} from './safeTriangle.js';
 export { makeModalInteractive, modal } from './modal.js';
 export { chipHtml, chipNode } from './chip.js';
 export { toast } from './toast.js';
