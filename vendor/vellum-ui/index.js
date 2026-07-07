@@ -12,6 +12,7 @@ export {
   submenuSide,
 } from './safeTriangle.js';
 export { makeModalInteractive, modal } from './modal.js';
+export { makeDraggable } from './makeDraggable.js';
 export { chipHtml, chipNode } from './chip.js';
 export { toast } from './toast.js';
 export { combobox } from './combobox.js';

@@ -17,6 +17,7 @@
  */
 import { el } from './dom.js';
 import { toast } from './toast.js';
+import { makeDraggable } from './makeDraggable.js';
 
 export const FEEDBACK_CAPTURE_KIND = 'vellum.feedback';
 export const FEEDBACK_CAPTURE_VERSION = 1;
@@ -618,7 +619,6 @@ export function bindFeedbackCapture({
   const isMacLike = /(mac|iphone|ipad|ipod)/i.test(
     String(navigatorObj?.platform || navigatorObj?.userAgent || ''),
   );
-  let dragState = null;
   let resizeState = null;
   let annotationMode = 'pointer';
   let annotationTool = null;
@@ -910,57 +910,29 @@ export function bindFeedbackCapture({
     }
   };
 
-  function onDragStart(event) {
-    if (event.pointerType === 'touch') return;
-    if (!modal || event.target?.closest?.('button, input, textarea, select, a')) return;
-    if (event.button !== undefined && event.button !== 0) return;
-    const start = setFeedbackPosition(
-      currentFeedbackPosition() ||
-        readJsonStorage(positionKey, storageObj) || {
-          left: FEEDBACK_EDGE_MARGIN,
-          top: FEEDBACK_EDGE_MARGIN,
+  const dragHandle = dragHandleEl
+    ? makeDraggable(dragHandleEl, {
+        targetEl: modal,
+        documentObj,
+        onStart: () => {
+          const start = setFeedbackPosition(
+            currentFeedbackPosition() ||
+              readJsonStorage(positionKey, storageObj) || {
+                left: FEEDBACK_EDGE_MARGIN,
+                top: FEEDBACK_EDGE_MARGIN,
+              },
+          );
+          return { left: start.left, top: start.top };
         },
-    );
-    dragState = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startLeft: start.left,
-      startTop: start.top,
-    };
-    modal.classList.add('is-dragging');
-    dragHandleEl?.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  }
-
-  function onDragMove(event) {
-    if (!dragState) return;
-    if (
-      event.pointerId !== undefined &&
-      dragState.pointerId !== undefined &&
-      event.pointerId !== dragState.pointerId
-    )
-      return;
-    setFeedbackPosition({
-      left: dragState.startLeft + event.clientX - dragState.startX,
-      top: dragState.startTop + event.clientY - dragState.startY,
-    });
-  }
-
-  function onDragEnd(event) {
-    if (!dragState) return;
-    if (
-      event?.pointerId !== undefined &&
-      dragState.pointerId !== undefined &&
-      event.pointerId !== dragState.pointerId
-    )
-      return;
-    dragState = null;
-    modal.classList.remove('is-dragging');
-    const current = currentFeedbackPosition();
-    if (current) setFeedbackPosition(current, { persist: true });
-    dragHandleEl?.releasePointerCapture?.(event?.pointerId);
-  }
+        onMove: ({ dx, dy, start }) => {
+          setFeedbackPosition({ left: start.left + dx, top: start.top + dy });
+        },
+        onEnd: () => {
+          const current = currentFeedbackPosition();
+          if (current) setFeedbackPosition(current, { persist: true });
+        },
+      })
+    : { destroy() {} };
 
   function onResizeStart(event) {
     if (event.button !== undefined && event.button !== 0) return;
@@ -1147,19 +1119,12 @@ export function bindFeedbackCapture({
   cleanups.push(() => modal.removeEventListener('click', onClick));
   noteEl?.addEventListener('input', syncSummary);
   cleanups.push(() => noteEl?.removeEventListener('input', syncSummary));
-  dragHandleEl?.addEventListener('pointerdown', onDragStart);
-  cleanups.push(() => dragHandleEl?.removeEventListener('pointerdown', onDragStart));
-  documentObj.addEventListener('pointermove', onDragMove);
+  cleanups.push(() => dragHandle.destroy());
   documentObj.addEventListener('pointermove', onResizeMove);
-  documentObj.addEventListener('pointerup', onDragEnd);
   documentObj.addEventListener('pointerup', onResizeEnd);
-  documentObj.addEventListener('pointercancel', onDragEnd);
   documentObj.addEventListener('pointercancel', onResizeEnd);
-  cleanups.push(() => documentObj.removeEventListener('pointermove', onDragMove));
   cleanups.push(() => documentObj.removeEventListener('pointermove', onResizeMove));
-  cleanups.push(() => documentObj.removeEventListener('pointerup', onDragEnd));
   cleanups.push(() => documentObj.removeEventListener('pointerup', onResizeEnd));
-  cleanups.push(() => documentObj.removeEventListener('pointercancel', onDragEnd));
   cleanups.push(() => documentObj.removeEventListener('pointercancel', onResizeEnd));
   annotationCanvasEl?.addEventListener('pointerdown', onAnnotationPointerDown);
   annotationCanvasEl?.addEventListener('pointermove', onAnnotationPointerMove);
