@@ -3,6 +3,12 @@ export { clearNode, el } from './dom.js';
 export { buttonHtml, fieldRowHtml } from './controlPrimitives.js';
 export { defaultSnapClosedAt, edgeResize, resolveEdgeDrag } from './edgeResize.js';
 export { outsideClick } from './outsideClick.js';
+export {
+  applyMotionMode,
+  applyMotionState,
+  motionMode,
+  setPopoverTransformOrigin,
+} from './motion.js';
 export { popover } from './popover.js';
 export { floatingMenu, moveFloatingMenuFocus } from './floatingMenu.js';
 export {
@@ -15,6 +21,13 @@ export { makeModalInteractive, modal } from './modal.js';
 export { makeDraggable } from './makeDraggable.js';
 export { chipHtml, chipNode } from './chip.js';
 export { toast } from './toast.js';
+export {
+  drawer,
+  drawerOffsetFromTransform,
+  projectDrawerOffset,
+  resolveDrawerGesture,
+  rubberbandDrawerOffset,
+} from './drawer.js';
 export { combobox } from './combobox.js';
 export { renderStatusState, statusStateHtml } from './statusState.js';
 export {
