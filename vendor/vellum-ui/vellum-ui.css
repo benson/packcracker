@@ -46,26 +46,28 @@
   --vui-title-shadow: none;
   --vui-label-tracking: 0.02em;
   --vui-label-transform: none;
-  --vui-color-bg: #f8f6f3;
-  --vui-color-surface: #f1ede8;
-  --vui-color-surface-sunken: #e8e2dc;
-  --vui-color-surface-raised: #fffdfa;
-  --vui-color-surface-hover: #eee9e4;
+  --vui-color-bg: #f7f2ea;
+  --vui-color-surface: #f1eae0;
+  --vui-color-surface-sunken: #e8ddcf;
+  --vui-color-surface-raised: #fffdf8;
+  --vui-color-surface-hover: #eee4da;
   --vui-color-surface-placeholder: #eee8df;
-  --vui-color-text: #26211e;
-  --vui-color-text-muted: #756b64;
-  --vui-color-text-strong: #211d1a;
+  --vui-color-text: #2d2520;
+  --vui-color-text-muted: #71665d;
+  --vui-color-text-strong: #211a17;
   --vui-color-text-inverse: #fffdfa;
   /* For content sitting on ink-colored surfaces (fab pills, dark bands). */
   --vui-color-on-dark-line: rgba(255, 255, 255, 0.4);
   --vui-color-on-dark-text-soft: rgba(255, 255, 255, 0.82);
-  --vui-color-line: rgba(52, 43, 38, 0.16);
-  --vui-color-line-strong: #8c827b;
+  --vui-color-line: rgba(67, 50, 41, 0.17);
+  --vui-color-line-strong: #8d7c70;
   --vui-color-line-focus: var(--vui-color-accent);
   --vui-color-line-faint: #e3ddd7;
-  --vui-color-accent: #68447d;
-  --vui-color-accent-soft: #eee6f3;
-  --vui-color-accent-strong: #442855;
+  --vui-color-accent: #653d78;
+  --vui-color-accent-soft: #eee3f2;
+  --vui-color-accent-strong: #452451;
+  /* Sparse editorial accent for folios, marks, and other non-action detail. */
+  --vui-color-brand-gold: #a77b37;
   --vui-color-success: #607d58;
   --vui-color-warn: #d8ae54;
   --vui-color-danger: #a3423a;
@@ -84,8 +86,8 @@
   --vui-color-info-line: #68447d;
   --vui-color-btn-primary-hover: #57366a;
   --vui-color-shadow: rgba(35, 29, 25, 0.18);
-  --vui-color-input-bg: #fffdfa;
-  --vui-color-input-bg-focus: #fff;
+  --vui-color-input-bg: #fffdf8;
+  --vui-color-input-bg-focus: #fffefb;
   --vui-color-overlay-strong: rgba(0, 0, 0, 0.8);
   --vui-color-overlay-soft: rgba(0, 0, 0, 0.4);
   --vui-modal-backdrop: var(--vui-color-overlay-soft);
@@ -135,8 +137,8 @@
   --vui-color-neutral-surface-warm: #fffefb;
   --vui-color-neutral-surface-faint: #fafafa;
   --vui-color-neutral-border-warm: #ddd6ca;
-  --vui-radius-sharp: 6px;
-  --vui-radius-soft: 9px;
+  --vui-radius-sharp: 5px;
+  --vui-radius-soft: 10px;
   --vui-radius-square: 0px;
   --vui-radius-pill: 999px;
   --vui-radius-card: 12px;
@@ -144,11 +146,11 @@
   --vui-radius-round: 12px;
   --vui-border-width: 1px;
   --vui-shadow-subtle: none;
-  --vui-shadow-soft: 0 1px 2px rgba(35, 29, 25, 0.08);
+  --vui-shadow-soft: 0 1px 2px rgba(45, 34, 27, 0.08);
   --vui-shadow-firm: 0 1px 2px rgba(35, 29, 25, 0.1);
   --vui-shadow-lift: none;
-  --vui-shadow-popover: 0 12px 32px rgba(35, 29, 25, 0.14);
-  --vui-shadow-overlay: 0 24px 64px rgba(35, 29, 25, 0.2);
+  --vui-shadow-popover: 0 14px 34px rgba(45, 34, 27, 0.15);
+  --vui-shadow-overlay: 0 26px 70px rgba(45, 34, 27, 0.2);
   --vui-shadow-hard: 0 10px 28px rgba(35, 29, 25, 0.14);
   --vui-shadow-hard-sm: 0 1px 2px rgba(35, 29, 25, 0.1);
   /* Floating depth cue for lightboxes, drawer edges, and slide-in panels. */
@@ -198,25 +200,26 @@
    their aliases to follow the theme. Only color-family tokens flip;
    shape, type, space, and motion are theme-invariant. */
 [data-theme="dark"] {
-  --vui-color-bg: #1d1b1f;
-  --vui-color-surface: #242126;
-  --vui-color-surface-sunken: #18161a;
-  --vui-color-surface-raised: #2b282e;
-  --vui-color-surface-hover: #312d34;
+  --vui-color-bg: #1d191d;
+  --vui-color-surface: #252025;
+  --vui-color-surface-sunken: #181417;
+  --vui-color-surface-raised: #2d272d;
+  --vui-color-surface-hover: #352d35;
   --vui-color-surface-placeholder: #302b31;
-  --vui-color-text: #eee8f0;
-  --vui-color-text-muted: #aaa1ad;
-  --vui-color-text-strong: #faf7fb;
+  --vui-color-text: #eee6ed;
+  --vui-color-text-muted: #b0a3ad;
+  --vui-color-text-strong: #fff9ff;
   --vui-color-text-inverse: #211d23;
   /* "Ink" surfaces are light in dark mode, so on-dark content flips dark. */
   --vui-color-on-dark-line: rgba(28, 23, 34, 0.4);
   --vui-color-on-dark-text-soft: rgba(28, 23, 34, 0.82);
-  --vui-color-line: rgba(238, 232, 240, 0.14);
+  --vui-color-line: rgba(239, 224, 235, 0.15);
   --vui-color-line-strong: #716a75;
   --vui-color-line-faint: #343039;
-  --vui-color-accent: #bd94d2;
-  --vui-color-accent-soft: #392e40;
-  --vui-color-accent-strong: #dbc4e6;
+  --vui-color-accent: #c99bdd;
+  --vui-color-accent-soft: #3b2d40;
+  --vui-color-accent-strong: #ead0f2;
+  --vui-color-brand-gold: #d3ad69;
   --vui-color-success: #93ab72;
   --vui-color-danger: #d05546;
   --vui-color-danger-hover: #b03c2e;
@@ -232,8 +235,8 @@
   --vui-color-info-line: #bd94d2;
   --vui-color-btn-primary-hover: #d0addf;
   --vui-color-shadow: rgba(0, 0, 0, 0.4);
-  --vui-color-input-bg: #2b282e;
-  --vui-color-input-bg-focus: #302d33;
+  --vui-color-input-bg: #2d272d;
+  --vui-color-input-bg-focus: #342d34;
   --vui-status-success-bg: #1e2a1e;
   --vui-status-success-border: #3c5a3c;
   --vui-status-success-text: #a8d8a8;
@@ -598,8 +601,8 @@ body.vui-app {
 
 .segment-btn.active,
 .segment-btn[aria-pressed="true"] {
-  background: var(--vui-color-text-strong);
-  border-color: var(--vui-color-text-strong);
+  background: var(--vui-color-accent);
+  border-color: var(--vui-color-accent);
   color: var(--vui-color-text-inverse);
   z-index: 1;
 }
@@ -642,8 +645,8 @@ body.vui-app {
 
 .tab-btn.active,
 .tab-btn[aria-selected="true"] {
-  border-bottom-color: var(--vui-color-text-strong);
-  color: var(--vui-color-text-strong);
+  border-bottom-color: var(--vui-color-accent);
+  color: var(--vui-color-accent-strong);
 }
 
 /* Global ring, pulled inside the row so it isn't clipped by the underline. */
@@ -686,7 +689,7 @@ select,
 .field-chrome {
   border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
-  background: var(--vui-color-surface-raised);
+  background: var(--vui-color-input-bg);
   color: var(--vui-color-text-strong);
   padding: 8px 14px 8px 10px;
   font-family: var(--vui-font-body);
@@ -713,7 +716,7 @@ select:focus,
 .field-chrome:hover {
   outline: none;
   border-color: var(--vui-color-line-focus);
-  box-shadow: 0 0 0 3px var(--vui-color-accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vui-color-accent) 16%, transparent);
 }
 
 /* Composite fields let an icon, emoji picker, unit, or other attached control
@@ -721,7 +724,7 @@ select:focus,
    .field-group-control; the group owns all chrome and the unified focus ring. */
 .field-group {
   align-items: stretch;
-  background: var(--vui-color-surface-raised);
+  background: var(--vui-color-input-bg);
   border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
   box-shadow: var(--vui-input-bevel);
@@ -737,7 +740,7 @@ select:focus,
 .field-group:focus-within {
   background: var(--vui-color-input-bg-focus);
   border-color: var(--vui-color-line-focus);
-  box-shadow: 0 0 0 3px var(--vui-color-accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vui-color-accent) 16%, transparent);
 }
 
 .field-group-addon {
@@ -2274,15 +2277,15 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 .vui-table th {
-  background: var(--vui-color-surface);
-  box-shadow: inset 0 -1px 0 var(--vui-color-line);
+  background: var(--vui-color-surface-sunken);
+  box-shadow: inset 0 -1px 0 var(--vui-color-line-strong);
   font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-xs);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
   text-align: left;
-  color: var(--vui-color-text-muted);
+  color: var(--vui-color-text-strong);
   border-bottom: 0;
   padding: 6px var(--vui-space-2);
 }
@@ -3296,9 +3299,9 @@ body.vui-design-system-page {
 }
 
 /* Brand study ------------------------------------------------------------
-   A reversible concept layer for evaluating a slightly more recognizable
-   Vellum. It changes no production defaults: the catalog opts in by setting
-   data-vui-brand-study="after" on <html>. */
+   The approved branded direction is now Vellum's production default. The
+   catalog keeps the previous release as a reversible historical snapshot by
+   setting data-vui-brand-study="before" on <html>. */
 .ds-brand-study-control {
   align-items: center;
   display: flex;
@@ -3399,47 +3402,47 @@ body.vui-design-system-page {
   line-height: 1.4;
 }
 
-[data-vui-brand-study="after"] {
-  --vui-color-bg: #f7f2ea;
-  --vui-color-surface: #f1eae0;
-  --vui-color-surface-sunken: #e8ddcf;
-  --vui-color-surface-raised: #fffdf8;
-  --vui-color-surface-hover: #eee4da;
-  --vui-color-text: #2d2520;
-  --vui-color-text-muted: #71665d;
-  --vui-color-text-strong: #211a17;
-  --vui-color-line: rgba(67, 50, 41, 0.17);
-  --vui-color-line-strong: #8d7c70;
-  --vui-color-accent: #653d78;
-  --vui-color-accent-soft: #eee3f2;
-  --vui-color-accent-strong: #452451;
+[data-vui-brand-study="before"] {
+  --vui-color-bg: #f8f6f3;
+  --vui-color-surface: #f1ede8;
+  --vui-color-surface-sunken: #e8e2dc;
+  --vui-color-surface-raised: #fffdfa;
+  --vui-color-surface-hover: #eee9e4;
+  --vui-color-text: #26211e;
+  --vui-color-text-muted: #756b64;
+  --vui-color-text-strong: #211d1a;
+  --vui-color-line: rgba(52, 43, 38, 0.16);
+  --vui-color-line-strong: #8c827b;
+  --vui-color-accent: #68447d;
+  --vui-color-accent-soft: #eee6f3;
+  --vui-color-accent-strong: #442855;
   --vui-color-brand-gold: #a77b37;
-  --vui-color-input-bg: #fffdf8;
-  --vui-color-input-bg-focus: #fffefb;
-  --vui-radius-sharp: 5px;
-  --vui-radius-soft: 10px;
-  --vui-shadow-soft: 0 1px 2px rgba(45, 34, 27, 0.08);
-  --vui-shadow-popover: 0 14px 34px rgba(45, 34, 27, 0.15);
-  --vui-shadow-overlay: 0 26px 70px rgba(45, 34, 27, 0.2);
+  --vui-color-input-bg: #fffdfa;
+  --vui-color-input-bg-focus: #fff;
+  --vui-radius-sharp: 6px;
+  --vui-radius-soft: 9px;
+  --vui-shadow-soft: 0 1px 2px rgba(35, 29, 25, 0.08);
+  --vui-shadow-popover: 0 12px 32px rgba(35, 29, 25, 0.14);
+  --vui-shadow-overlay: 0 24px 64px rgba(35, 29, 25, 0.2);
   --vui-focus-ring: 2px solid var(--vui-color-accent);
 }
 
-[data-theme="dark"][data-vui-brand-study="after"] {
-  --vui-color-bg: #1d191d;
-  --vui-color-surface: #252025;
-  --vui-color-surface-sunken: #181417;
-  --vui-color-surface-raised: #2d272d;
-  --vui-color-surface-hover: #352d35;
-  --vui-color-text: #eee6ed;
-  --vui-color-text-muted: #b0a3ad;
-  --vui-color-text-strong: #fff9ff;
-  --vui-color-line: rgba(239, 224, 235, 0.15);
-  --vui-color-accent: #c99bdd;
-  --vui-color-accent-soft: #3b2d40;
-  --vui-color-accent-strong: #ead0f2;
+[data-theme="dark"][data-vui-brand-study="before"] {
+  --vui-color-bg: #1d1b1f;
+  --vui-color-surface: #242126;
+  --vui-color-surface-sunken: #18161a;
+  --vui-color-surface-raised: #2b282e;
+  --vui-color-surface-hover: #312d34;
+  --vui-color-text: #eee8f0;
+  --vui-color-text-muted: #aaa1ad;
+  --vui-color-text-strong: #faf7fb;
+  --vui-color-line: rgba(238, 232, 240, 0.14);
+  --vui-color-accent: #bd94d2;
+  --vui-color-accent-soft: #392e40;
+  --vui-color-accent-strong: #dbc4e6;
   --vui-color-brand-gold: #d3ad69;
-  --vui-color-input-bg: #2d272d;
-  --vui-color-input-bg-focus: #342d34;
+  --vui-color-input-bg: #2b282e;
+  --vui-color-input-bg-focus: #302d33;
 }
 
 [data-vui-brand-study="after"] .ds-page-head {
@@ -3538,44 +3541,34 @@ body.vui-design-system-page {
   width: 5px;
 }
 
-[data-vui-brand-study="after"] .btn:not(.btn-secondary):not(.btn-danger):not(.btn-ink),
-[data-vui-brand-study="after"] .segment-btn.active,
-[data-vui-brand-study="after"] .segment-btn[aria-pressed="true"] {
-  background: var(--vui-color-accent);
-  border-color: var(--vui-color-accent);
+[data-vui-brand-study="before"] .segment-btn.active,
+[data-vui-brand-study="before"] .segment-btn[aria-pressed="true"] {
+  background: var(--vui-color-text-strong);
+  border-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-inverse);
 }
 
-[data-vui-brand-study="after"] .tab-btn.active,
-[data-vui-brand-study="after"] .tab-btn[aria-selected="true"] {
-  border-bottom-color: var(--vui-color-accent);
-  color: var(--vui-color-accent-strong);
-}
-
-[data-vui-brand-study="after"] .field-chrome:focus,
-[data-vui-brand-study="after"] .field-group:focus-within {
-  border-color: var(--vui-color-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vui-color-accent) 16%, transparent);
-}
-
-[data-vui-brand-study="after"] .vui-table th {
-  background: var(--vui-color-surface-sunken);
-  border-bottom-color: var(--vui-color-line-strong);
+[data-vui-brand-study="before"] .tab-btn.active,
+[data-vui-brand-study="before"] .tab-btn[aria-selected="true"] {
+  border-bottom-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-strong);
+}
+
+[data-vui-brand-study="before"] .field-chrome:focus,
+[data-vui-brand-study="before"] .field-group:focus-within {
+  box-shadow: 0 0 0 3px var(--vui-color-accent-soft);
+}
+
+[data-vui-brand-study="before"] .vui-table th {
+  background: var(--vui-color-surface);
+  box-shadow: inset 0 -1px 0 var(--vui-color-line);
+  color: var(--vui-color-text-muted);
 }
 
 [data-vui-brand-study="after"] .vui-table th:nth-last-child(-n + 1),
 [data-vui-brand-study="after"] .vui-table td:nth-last-child(-n + 1) {
   font-variant-numeric: tabular-nums;
   text-align: right;
-}
-
-[data-vui-brand-study="after"] .ui-modal-card,
-[data-vui-brand-study="after"] .combobox-list,
-[data-vui-brand-study="after"] .floating-menu,
-[data-vui-brand-study="after"] .toast {
-  border-color: var(--vui-color-line);
-  box-shadow: var(--vui-shadow-popover);
 }
 
 @media (max-width: 900px) {
