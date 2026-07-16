@@ -3444,7 +3444,6 @@ body.vui-design-system-page {
 
 [data-vui-brand-study="after"] .ds-page-head {
   border-color: var(--vui-color-line);
-  border-left: 4px solid var(--vui-color-accent);
   background: var(--vui-color-surface-raised);
   box-shadow: var(--vui-shadow-soft);
   padding-left: 76px;
