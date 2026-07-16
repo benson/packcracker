@@ -1,3 +1,5 @@
+import { applyMotionMode, applyMotionState } from './motion.js';
+
 const RESIZE_EDGES = ['bottom', 'left', 'bottom-left'];
 const MODAL_STACK_BASE = 100;
 const MODAL_STACK_KEY = '__vuiModalStackIndex';
@@ -73,14 +75,16 @@ export function modal(modalEl, options = {}) {
   const isOpen = () => modalEl.classList.contains(openClass) || !modalEl.hidden;
 
   function applyOpenState(open) {
+    applyMotionState(modalEl, open);
     modalEl.hidden = !open;
     modalEl.classList.toggle(openClass, open);
     modalEl.setAttribute('aria-hidden', open ? 'false' : 'true');
     if (bodyClass) doc?.body?.classList.toggle(bodyClass, open);
   }
 
-  function open({ reason = 'manual', event = null, focusTarget = null } = {}) {
+  function open({ reason = 'manual', event = null, focusTarget = null, motion = 'auto' } = {}) {
     if (destroyed || isOpen()) return;
+    applyMotionMode(modalEl, { motion, reason, event });
     const target =
       focusTarget ||
       (typeof options.focusTarget === 'function' ? options.focusTarget() : options.focusTarget);
@@ -95,8 +99,9 @@ export function modal(modalEl, options = {}) {
     } catch (_error) {}
   }
 
-  function close({ reason = 'manual', event = null } = {}) {
+  function close({ reason = 'manual', event = null, motion = 'auto' } = {}) {
     if (destroyed || !isOpen()) return;
+    applyMotionMode(modalEl, { motion, reason, event });
     applyOpenState(false);
     if (typeof onClose === 'function') onClose({ reason, event });
   }
@@ -108,9 +113,9 @@ export function modal(modalEl, options = {}) {
     close({ reason, event });
   }
 
-  function toggle({ reason = 'toggle', event = null, focusTarget = null } = {}) {
-    if (isOpen()) close({ reason, event });
-    else open({ reason, event, focusTarget });
+  function toggle({ reason = 'toggle', event = null, focusTarget = null, motion = 'auto' } = {}) {
+    if (isOpen()) close({ reason, event, motion });
+    else open({ reason, event, focusTarget, motion });
   }
 
   function onClick(event) {

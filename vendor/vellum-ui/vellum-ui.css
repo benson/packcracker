@@ -10,65 +10,69 @@
   --vui-z-fab: 120;
   --vui-z-feedback-canvas: 125;
   --vui-z-feedback: 130;
-  --vui-control-height-compact: 28px;
-  --vui-control-pad-y: 5px;
+  --vui-control-height-compact: 32px;
+  --vui-control-pad-y: 6px;
   --vui-control-pad-x: 10px;
-  --vui-focus-ring: 2px solid var(--vui-color-text-strong);
+  --vui-focus-ring: 2px solid var(--vui-color-accent);
   --vui-focus-ring-offset: 2px;
-  --vui-font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --vui-font-body:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   /* BEN-623: quieter bookish serif — no unicase theatrics, no webfont. */
-  --vui-font-heading: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  --vui-font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  --vui-font-mono: 'Courier New', Courier, monospace;
-  --vui-font-size-xxxs: 0.55rem;
-  --vui-font-size-xxs: 0.68rem;
-  --vui-font-size-xs: 0.72rem;
-  --vui-font-size-sm: 0.78rem;
-  --vui-font-size-md: 0.85rem;
-  --vui-font-size-base: 0.9rem;
-  --vui-font-size-lg: 0.95rem;
-  --vui-font-size-xl: 1.02rem;
-  --vui-font-size-heading: 1.3rem;
-  --vui-font-size-display: 1.7rem;
+  --vui-font-heading:
+    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --vui-font-display: var(--vui-font-heading);
+  --vui-font-mono:
+    ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --vui-font-size-xxxs: 0.625rem;
+  --vui-font-size-xxs: 0.6875rem;
+  --vui-font-size-xs: 0.75rem;
+  --vui-font-size-sm: 0.8125rem;
+  --vui-font-size-md: 0.875rem;
+  --vui-font-size-base: 0.9375rem;
+  --vui-font-size-lg: 1rem;
+  --vui-font-size-xl: 1.125rem;
+  --vui-font-size-heading: 1.25rem;
+  --vui-font-size-display: 1.625rem;
   --vui-font-size-jumbo: 2rem;
-  --vui-font-weight-body: 900;
-  --vui-font-weight-title: 900;
-  --vui-line-height-body: 1.4;
+  --vui-font-weight-body: 400;
+  --vui-font-weight-title: 600;
+  --vui-line-height-body: 1.45;
   --vui-letter-spacing-ui: 0;
   --vui-text-case: none;
   --vui-title-size: clamp(36px, 5.6vw, 68px);
   --vui-title-tracking: -0.06em;
   --vui-title-transform: none;
-  --vui-title-shadow: 3px 3px 0 var(--vui-color-text-strong);
-  --vui-label-tracking: 0.06em;
-  --vui-label-transform: uppercase;
-  --vui-color-bg: #f1eef6;
-  --vui-color-surface: #e7e2ee;
-  --vui-color-surface-sunken: #cec4dd;
-  --vui-color-surface-raised: #faf8fd;
-  --vui-color-surface-hover: #ece7f3;
-  --vui-color-surface-placeholder: #e8d8ad;
-  --vui-color-text: #15100d;
-  --vui-color-text-muted: #5b3b25;
-  --vui-color-text-strong: #15100d;
-  --vui-color-text-inverse: #fff5d2;
+  --vui-title-shadow: none;
+  --vui-label-tracking: 0.02em;
+  --vui-label-transform: none;
+  --vui-color-bg: #f8f6f3;
+  --vui-color-surface: #f1ede8;
+  --vui-color-surface-sunken: #e8e2dc;
+  --vui-color-surface-raised: #fffdfa;
+  --vui-color-surface-hover: #eee9e4;
+  --vui-color-surface-placeholder: #eee8df;
+  --vui-color-text: #26211e;
+  --vui-color-text-muted: #756b64;
+  --vui-color-text-strong: #211d1a;
+  --vui-color-text-inverse: #fffdfa;
   /* For content sitting on ink-colored surfaces (fab pills, dark bands). */
   --vui-color-on-dark-line: rgba(255, 255, 255, 0.4);
   --vui-color-on-dark-text-soft: rgba(255, 255, 255, 0.82);
-  --vui-color-line: rgba(21, 16, 13, 0.4);
-  --vui-color-line-strong: #15100d;
+  --vui-color-line: rgba(52, 43, 38, 0.16);
+  --vui-color-line-strong: #8c827b;
   --vui-color-line-focus: var(--vui-color-accent);
-  --vui-color-line-faint: #eee;
-  --vui-color-accent: #6c3aa4;
-  --vui-color-accent-soft: #e7d8f5;
-  --vui-color-accent-strong: #202842;
-  --vui-color-success: #7f9461;
-  --vui-color-warn: #f2c452;
-  --vui-color-danger: #a73528;
+  --vui-color-line-faint: #e3ddd7;
+  --vui-color-accent: #68447d;
+  --vui-color-accent-soft: #eee6f3;
+  --vui-color-accent-strong: #442855;
+  --vui-color-success: #607d58;
+  --vui-color-warn: #d8ae54;
+  --vui-color-danger: #a3423a;
   /* Alias: never diverged from danger, and as an alias it theme-flips free. */
   --vui-color-danger-strong: var(--vui-color-danger);
-  --vui-color-danger-hover: #7a2820;
-  --vui-color-info: #4aa6c8;
+  --vui-color-danger-hover: #87352f;
+  --vui-color-info: #68447d;
   --vui-color-success-soft: rgba(127, 148, 97, 0.18);
   --vui-color-warn-soft: #ead07a;
   --vui-color-warn-soft-pale: #fff8e0;
@@ -76,24 +80,24 @@
   --vui-color-info-soft: #d7edf3;
   --vui-color-success-line: #7f9461;
   --vui-color-warn-line: #d4a830;
-  --vui-color-danger-line: #a73528;
-  --vui-color-info-line: #4aa6c8;
-  --vui-color-btn-primary-hover: #5b3b25;
-  --vui-color-shadow: #3d2b22;
-  --vui-color-input-bg: rgba(255, 255, 255, 0.36);
-  --vui-color-input-bg-focus: rgba(255, 255, 255, 0.52);
+  --vui-color-danger-line: #a3423a;
+  --vui-color-info-line: #68447d;
+  --vui-color-btn-primary-hover: #57366a;
+  --vui-color-shadow: rgba(35, 29, 25, 0.18);
+  --vui-color-input-bg: #fffdfa;
+  --vui-color-input-bg-focus: #fff;
   --vui-color-overlay-strong: rgba(0, 0, 0, 0.8);
   --vui-color-overlay-soft: rgba(0, 0, 0, 0.4);
   --vui-modal-backdrop: var(--vui-color-overlay-soft);
-  --vui-modal-card-bg: var(--vui-color-surface);
-  --vui-modal-card-border: 3px solid var(--vui-color-text-strong);
-  --vui-modal-card-radius: 6px;
-  --vui-modal-card-shadow: 7px 7px 0 var(--vui-color-shadow);
+  --vui-modal-card-bg: var(--vui-color-surface-raised);
+  --vui-modal-card-border: 1px solid var(--vui-color-line);
+  --vui-modal-card-radius: 12px;
+  --vui-modal-card-shadow: var(--vui-shadow-overlay);
   --vui-modal-card-max-height: calc(100vh - 32px);
   --vui-modal-card-min-width: 220px;
   --vui-modal-card-min-height: 140px;
-  /* The head is the ink band (one head fleet-wide); the parchment texture
-     tokens retired with the two-head split. */
+  /* One quiet header treatment fleet-wide; centered and draggable modal
+     variants share the same geometry and surface. */
   --vui-modal-head-padding: 9px 14px;
   --vui-modal-body-padding: 14px 16px;
   --vui-modal-actions-padding: 12px 16px;
@@ -131,38 +135,48 @@
   --vui-color-neutral-surface-warm: #fffefb;
   --vui-color-neutral-surface-faint: #fafafa;
   --vui-color-neutral-border-warm: #ddd6ca;
-  --vui-radius-sharp: 4px;
-  --vui-radius-soft: 7px;
+  --vui-radius-sharp: 6px;
+  --vui-radius-soft: 9px;
   --vui-radius-square: 0px;
   --vui-radius-pill: 999px;
-  --vui-radius-card: 4%;
-  --vui-radius-tight: 2px;
-  --vui-radius-round: 10px;
-  --vui-border-width: 3px;
-  --vui-shadow-subtle: 0 0 0 var(--vui-color-shadow);
-  --vui-shadow-soft: 3px 3px 0 var(--vui-color-shadow);
-  --vui-shadow-firm: 4px 4px 0 var(--vui-color-shadow);
-  --vui-shadow-lift: 0 3px 0 var(--vui-color-shadow);
-  --vui-shadow-popover: 4px 4px 0 var(--vui-color-shadow);
-  --vui-shadow-overlay: 8px 8px 0 var(--vui-color-shadow);
-  --vui-shadow-hard: 6px 6px 0 var(--vui-color-shadow);
-  --vui-shadow-hard-sm: 3px 3px 0 var(--vui-color-text-strong);
-  /* The sanctioned soft shadow: floating depth cues over content (lightbox,
-     drawer edges, slide-in panels). Everything else stays hard-offset. */
-  --vui-shadow-float: 0 8px 24px rgba(0, 0, 0, 0.18);
-  /* Press feedback: controls shift down-right and their shadow collapses to
-     the remainder. One pair of values fleet-wide (BEN-624 follow-up). */
-  --vui-press-shift: 2px;
-  --vui-press-shadow: 2px 2px 0 var(--vui-color-shadow);
-  /* Inset bevel that makes inputs read carved-in; theme-tuned below. */
-  --vui-input-bevel:
-    inset 3px 3px 0 rgba(0, 0, 0, 0.18),
-    inset -2px -2px 0 rgba(255, 255, 255, 0.32);
+  --vui-radius-card: 12px;
+  --vui-radius-tight: 4px;
+  --vui-radius-round: 12px;
+  --vui-border-width: 1px;
+  --vui-shadow-subtle: none;
+  --vui-shadow-soft: 0 1px 2px rgba(35, 29, 25, 0.08);
+  --vui-shadow-firm: 0 1px 2px rgba(35, 29, 25, 0.1);
+  --vui-shadow-lift: none;
+  --vui-shadow-popover: 0 12px 32px rgba(35, 29, 25, 0.14);
+  --vui-shadow-overlay: 0 24px 64px rgba(35, 29, 25, 0.2);
+  --vui-shadow-hard: 0 10px 28px rgba(35, 29, 25, 0.14);
+  --vui-shadow-hard-sm: 0 1px 2px rgba(35, 29, 25, 0.1);
+  /* Floating depth cue for lightboxes, drawer edges, and slide-in panels. */
+  --vui-shadow-float: 0 12px 32px rgba(35, 29, 25, 0.16);
+  /* Compatibility aliases for consumers that still reference the previous
+     press-shadow contract. New controls use a subtle scale directly. */
+  --vui-press-shift: 0;
+  --vui-press-shadow: var(--vui-shadow-firm);
+  /* Quiet field depth; theme-tuned below. */
+  --vui-input-bevel: 0 1px 2px rgba(35, 29, 25, 0.07);
   /* snap drives press/hover feedback on controls (BEN-624) */
-  --vui-motion-snap: 70ms;
+  --vui-motion-snap: 100ms;
   --vui-motion-fast: 120ms;
   --vui-motion-base: 180ms;
-  --vui-motion-slow: 260ms;
+  --vui-motion-slow: 240ms;
+  /* Semantic motion: quick feedback stays on snap; transient surfaces enter
+     with a little more time than they take to leave. Consumers can slow the
+     whole surface system in a motion lab without changing interaction snap. */
+  --vui-motion-scale: 1;
+  --vui-motion-enter: calc(var(--vui-motion-base) * var(--vui-motion-scale));
+  --vui-motion-exit: calc(var(--vui-motion-fast) * var(--vui-motion-scale));
+  --vui-motion-overlay: calc(var(--vui-motion-base) * var(--vui-motion-scale));
+  --vui-motion-drawer: calc(var(--vui-motion-slow) * var(--vui-motion-scale));
+  --vui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --vui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --vui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --vui-popover-origin-x: 50%;
+  --vui-popover-origin-y: 0%;
   --vui-space-1: 4px;
   --vui-space-2: 8px;
   --vui-space-3: 12px;
@@ -174,7 +188,7 @@
   --vui-color-on-warn: #15100d;
 
   /* Vellum convenience aliases */
-  --vui-control-height: 34px;
+  --vui-control-height: 36px;
   --vui-space-6: 24px;
   --vui-z-toast: 160;
 }
@@ -183,30 +197,30 @@
    --vui-* tokens on their own :root (biblioplex) need the attribute there for
    their aliases to follow the theme. Only color-family tokens flip;
    shape, type, space, and motion are theme-invariant. */
-[data-theme='dark'] {
-  --vui-color-bg: #1c1722;
-  --vui-color-surface: #241e2c;
-  --vui-color-surface-sunken: #161219;
-  --vui-color-surface-raised: #2e2738;
-  --vui-color-surface-hover: #2a2333;
-  --vui-color-surface-placeholder: #4a3f28;
-  --vui-color-text: #e9e2f2;
-  --vui-color-text-muted: #b8a18d;
-  --vui-color-text-strong: #f3eefa;
-  --vui-color-text-inverse: #1c1722;
+[data-theme="dark"] {
+  --vui-color-bg: #1d1b1f;
+  --vui-color-surface: #242126;
+  --vui-color-surface-sunken: #18161a;
+  --vui-color-surface-raised: #2b282e;
+  --vui-color-surface-hover: #312d34;
+  --vui-color-surface-placeholder: #302b31;
+  --vui-color-text: #eee8f0;
+  --vui-color-text-muted: #aaa1ad;
+  --vui-color-text-strong: #faf7fb;
+  --vui-color-text-inverse: #211d23;
   /* "Ink" surfaces are light in dark mode, so on-dark content flips dark. */
   --vui-color-on-dark-line: rgba(28, 23, 34, 0.4);
   --vui-color-on-dark-text-soft: rgba(28, 23, 34, 0.82);
-  --vui-color-line: rgba(233, 226, 242, 0.35);
-  --vui-color-line-strong: #e9e2f2;
-  --vui-color-line-faint: #332c3d;
-  --vui-color-accent: #a878e0;
-  --vui-color-accent-soft: #3a2d52;
-  --vui-color-accent-strong: #d8c8f0;
+  --vui-color-line: rgba(238, 232, 240, 0.14);
+  --vui-color-line-strong: #716a75;
+  --vui-color-line-faint: #343039;
+  --vui-color-accent: #bd94d2;
+  --vui-color-accent-soft: #392e40;
+  --vui-color-accent-strong: #dbc4e6;
   --vui-color-success: #93ab72;
   --vui-color-danger: #d05546;
   --vui-color-danger-hover: #b03c2e;
-  --vui-color-info: #62b8d8;
+  --vui-color-info: #bd94d2;
   --vui-color-success-soft: rgba(147, 171, 114, 0.22);
   --vui-color-warn-soft: #5a4a20;
   --vui-color-warn-soft-pale: #2e2614;
@@ -215,11 +229,11 @@
   --vui-color-success-line: #93ab72;
   --vui-color-warn-line: #d4a830;
   --vui-color-danger-line: #d05546;
-  --vui-color-info-line: #62b8d8;
-  --vui-color-btn-primary-hover: #c4a484;
-  --vui-color-shadow: #0a0710;
-  --vui-color-input-bg: rgba(0, 0, 0, 0.25);
-  --vui-color-input-bg-focus: rgba(0, 0, 0, 0.4);
+  --vui-color-info-line: #bd94d2;
+  --vui-color-btn-primary-hover: #d0addf;
+  --vui-color-shadow: rgba(0, 0, 0, 0.4);
+  --vui-color-input-bg: #2b282e;
+  --vui-color-input-bg-focus: #302d33;
   --vui-status-success-bg: #1e2a1e;
   --vui-status-success-border: #3c5a3c;
   --vui-status-success-text: #a8d8a8;
@@ -232,12 +246,10 @@
   --vui-status-neutral-bg: #242028;
   --vui-status-neutral-border: #46404f;
   --vui-status-neutral-text: #a298ad;
-  --vui-shadow-float: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --vui-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
   /* Darker carve, fainter glint — the light-theme bevel reads embossed on
      dark surfaces. */
-  --vui-input-bevel:
-    inset 3px 3px 0 rgba(0, 0, 0, 0.5),
-    inset -2px -2px 0 rgba(255, 255, 255, 0.06);
+  --vui-input-bevel: 0 1px 2px rgba(0, 0, 0, 0.28);
   --vui-color-neutral-black: #f3eefa;
   --vui-color-neutral-900: #e9e2f2;
   --vui-color-neutral-700: #cfc6da;
@@ -316,17 +328,19 @@ body.vui-app {
 }
 
 .vui-card {
-  border: 2px solid var(--vui-color-line-strong);
-  border-radius: var(--vui-radius-soft);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-round);
   background: var(--vui-color-surface-raised);
-  box-shadow: var(--vui-shadow-hard);
+  box-shadow: var(--vui-shadow-soft);
 }
 
 .vui-label {
   color: var(--vui-color-text-muted);
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-xs);
+  font-weight: var(--vui-font-weight-title);
   letter-spacing: var(--vui-label-tracking);
-  text-transform: uppercase;
+  text-transform: var(--vui-label-transform);
 }
 
 :focus-visible {
@@ -356,9 +370,9 @@ body.vui-app {
 /* primitives.css */
 .btn {
   align-items: center;
-  border: var(--vui-border-width) solid var(--vui-color-text-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
-  box-shadow: var(--vui-shadow-firm);
+  box-shadow: var(--vui-shadow-soft);
   display: inline-flex;
   flex-wrap: wrap;
   gap: 2px 6px;
@@ -367,40 +381,53 @@ body.vui-app {
   text-align: center;
   text-wrap: balance;
   min-height: var(--vui-control-height-compact);
-  padding: var(--vui-control-pad-y) var(--vui-control-pad-x);
+  padding: calc(var(--vui-control-pad-y) - 1px) var(--vui-control-pad-x)
+    calc(var(--vui-control-pad-y) + 1px);
   font-size: var(--vui-font-size-sm);
-  font-family: var(--vui-font-mono);
-  font-weight: var(--vui-font-weight-title);
-  letter-spacing: 0.04em;
+  font-family: var(--vui-font-body);
+  font-weight: var(--vui-font-weight-body);
+  letter-spacing: 0;
+  line-height: 1.2;
   cursor: pointer;
   transition:
-    transform var(--vui-motion-snap) steps(2, end),
-    box-shadow var(--vui-motion-snap) steps(2, end),
-    background-color var(--vui-motion-snap),
-    filter var(--vui-motion-snap);
-  text-transform: lowercase;
-  background-color: var(--vui-color-warn);
-  background-image:
-    radial-gradient(rgba(21, 16, 13, 0.1) 1px, transparent 1px),
-    linear-gradient(rgba(255, 245, 210, 0.08), rgba(0, 0, 0, 0.05));
-  background-size:
-    6px 6px,
-    auto;
-  color: var(--vui-color-on-warn);
+    transform var(--vui-motion-fast) var(--vui-ease-out),
+    border-color var(--vui-motion-fast) ease,
+    background-color var(--vui-motion-fast) ease,
+    box-shadow var(--vui-motion-fast) ease;
+  text-transform: none;
+  background: var(--vui-color-accent);
+  color: var(--vui-color-text-inverse);
 }
 
-.btn:hover:not(:disabled),
-.ds-force-hover .ds-zoom-stage .btn:not(:disabled) {
-  transform: translate(var(--vui-press-shift), var(--vui-press-shift));
-  box-shadow: var(--vui-press-shadow);
-  filter: brightness(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled),
+  .ds-force-hover .ds-zoom-stage .btn:not(:disabled) {
+    background-color: var(--vui-color-btn-primary-hover);
+    border-color: var(--vui-color-btn-primary-hover);
+    box-shadow: var(--vui-shadow-soft);
+    color: var(--vui-color-text-inverse);
+    filter: none;
+    transform: none;
+  }
+
+  .btn-secondary:hover:not(:disabled),
+  .ds-force-hover .ds-zoom-stage .btn-secondary:not(:disabled),
+  .btn-danger:hover:not(:disabled),
+  .ds-force-hover .ds-zoom-stage .btn-danger:not(:disabled),
+  .btn-ink:hover:not(:disabled),
+  .ds-force-hover .ds-zoom-stage .btn-ink:not(:disabled) {
+    background-color: var(--vui-color-surface-hover);
+    border-color: var(--vui-color-line-strong);
+    color: var(--vui-color-text-strong);
+    filter: none;
+  }
 }
 
 .btn:active:not(:disabled),
 .ds-force-active .ds-zoom-stage .btn:not(:disabled) {
-  transform: translate(4px, 4px);
-  box-shadow: 0 0 0 var(--vui-color-shadow);
-  filter: brightness(0.94);
+  transform: scale(0.98);
+  box-shadow: var(--vui-shadow-subtle);
+  filter: none;
 }
 
 .btn:focus-visible,
@@ -410,62 +437,57 @@ body.vui-app {
 }
 
 .btn:disabled {
-  background-color: var(--vui-color-line);
-  border-color: var(--vui-color-line-strong);
+  background: var(--vui-color-surface-sunken);
+  border-color: var(--vui-color-line);
   box-shadow: none;
   color: var(--vui-color-text-muted);
   cursor: default;
-  filter: grayscale(0.25);
+  filter: none;
+  opacity: 0.62;
 }
 
 /* Optional keyboard-shortcut hint inside any button (BEN-622). One treatment
-   for .btn and the fab pills: currentColor-derived so it reads on gold,
-   secondary paper, and ink surfaces alike. */
+   for .btn and the fab pills, derived from the current text color. */
 .btn-shortcut,
 .fab-shortcut {
+  align-items: center;
   border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
   border-radius: var(--vui-radius-tight);
   color: color-mix(in srgb, currentColor 85%, transparent);
-  font-size: var(--vui-font-size-xs);
+  display: inline-grid;
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xxxs);
   font-weight: var(--vui-font-weight-body);
+  height: 16px;
+  justify-items: center;
   letter-spacing: 0;
   line-height: 1;
   margin-left: 2px;
   min-width: 16px;
-  padding: 1px 4px;
+  padding: 0 3px;
   text-align: center;
 }
 
-.btn-secondary {
-  background-color: var(--vui-color-info);
-  color: var(--vui-color-text-strong);
-  border-color: var(--vui-color-text-strong);
+.btn:not(.btn-secondary):not(.btn-danger):not(.btn-ink) {
+  font-weight: 600;
 }
 
-.btn-secondary:hover:not(:disabled),
-.ds-force-hover .ds-zoom-stage .btn-secondary:not(:disabled) {
-  filter: brightness(1.05);
+.btn-secondary {
+  background: var(--vui-color-surface-raised);
+  color: var(--vui-color-text-strong);
+  border-color: var(--vui-color-line);
 }
 
 .btn-danger {
-  background-color: var(--vui-color-danger);
-  color: var(--vui-color-text-inverse);
-  border-color: var(--vui-color-text-strong);
-}
-
-.btn-danger:hover:not(:disabled),
-.ds-force-hover .ds-zoom-stage .btn-danger:not(:disabled) {
-  color: var(--vui-color-text-inverse);
+  background: var(--vui-color-danger-soft);
+  color: var(--vui-color-danger);
+  border-color: var(--vui-color-danger-line);
 }
 
 .btn-ink {
   background-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-inverse);
-}
-
-.btn-ink:hover:not(:disabled),
-.ds-force-hover .ds-zoom-stage .btn-ink:not(:disabled) {
-  filter: brightness(1.25);
+  border-color: var(--vui-color-text-strong);
 }
 
 .btn-danger:disabled,
@@ -476,9 +498,11 @@ body.vui-app {
 .btn-ink:disabled:hover {
   background-color: var(--vui-color-line);
   color: var(--vui-color-text-muted);
-  border-color: var(--vui-color-line-strong);
+  border-color: var(--vui-color-line);
   box-shadow: none;
   cursor: default;
+  filter: none;
+  opacity: 0.62;
 }
 
 .btn-link,
@@ -528,19 +552,19 @@ body.vui-app {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: var(--vui-border-width) solid var(--vui-color-line-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
   background: transparent;
   color: var(--vui-color-neutral-550);
   cursor: pointer;
-  font-family: var(--vui-font-mono);
-  font-weight: 400;
+  font-family: var(--vui-font-body);
+  font-weight: 500;
   font-size: var(--vui-font-size-xs);
   line-height: 1;
   min-height: var(--vui-control-height-compact);
   padding: var(--vui-control-pad-y) var(--vui-control-pad-x);
   text-decoration: none;
-  text-transform: lowercase;
+  text-transform: none;
   transition:
     color var(--vui-motion-fast),
     background-color var(--vui-motion-fast);
@@ -573,7 +597,7 @@ body.vui-app {
 }
 
 .segment-btn.active,
-.segment-btn[aria-pressed='true'] {
+.segment-btn[aria-pressed="true"] {
   background: var(--vui-color-text-strong);
   border-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-inverse);
@@ -603,12 +627,12 @@ body.vui-app {
   background: transparent;
   color: var(--vui-color-neutral-550);
   cursor: pointer;
-  font-family: var(--vui-font-mono);
+  font-family: var(--vui-font-body);
   font-weight: 400;
   font-size: var(--vui-font-size-xs);
   line-height: 1;
   padding: 7px 10px;
-  text-transform: lowercase;
+  text-transform: none;
   transition: color var(--vui-motion-fast);
 }
 
@@ -617,7 +641,7 @@ body.vui-app {
 }
 
 .tab-btn.active,
-.tab-btn[aria-selected='true'] {
+.tab-btn[aria-selected="true"] {
   border-bottom-color: var(--vui-color-text-strong);
   color: var(--vui-color-text-strong);
 }
@@ -649,33 +673,39 @@ body.vui-app {
 /* .field-chrome (BEN-692): the field visual for elements that are not real form
    controls — e.g. a <button> popover trigger that should read as a field.
    Carries chrome only; consumers own layout, cursor, and arrow affordances. */
-input[type='text'],
-input[type='search'],
-input[type='number'],
-input[type='email'],
-input[type='url'],
-input[type='tel'],
-input[type='password'],
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="tel"],
+input[type="password"],
 input:not([type]),
 textarea,
 select,
 .field-chrome {
-  border: var(--vui-border-width) solid var(--vui-color-line-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
   background: var(--vui-color-surface-raised);
   color: var(--vui-color-text-strong);
   padding: 8px 14px 8px 10px;
-  font-family: var(--vui-font-mono);
+  font-family: var(--vui-font-body);
+  font-size: var(--vui-font-size-sm);
+  font-weight: 400;
   box-shadow: var(--vui-input-bevel);
+  transition:
+    border-color var(--vui-motion-fast) ease,
+    box-shadow var(--vui-motion-fast) ease,
+    background-color var(--vui-motion-fast) ease;
 }
 
-input[type='text']:focus,
-input[type='search']:focus,
-input[type='number']:focus,
-input[type='email']:focus,
-input[type='url']:focus,
-input[type='tel']:focus,
-input[type='password']:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="password"]:focus,
 input:not([type]):focus,
 textarea:focus,
 select:focus,
@@ -683,6 +713,108 @@ select:focus,
 .field-chrome:hover {
   outline: none;
   border-color: var(--vui-color-line-focus);
+  box-shadow: 0 0 0 3px var(--vui-color-accent-soft);
+}
+
+/* Composite fields let an icon, emoji picker, unit, or other attached control
+   share one input frame. Children opt into .field-group-addon and
+   .field-group-control; the group owns all chrome and the unified focus ring. */
+.field-group {
+  align-items: stretch;
+  background: var(--vui-color-surface-raised);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-sharp);
+  box-shadow: var(--vui-input-bevel);
+  display: flex;
+  min-width: 0;
+  overflow: clip;
+  transition:
+    background-color var(--vui-motion-fast) ease,
+    border-color var(--vui-motion-fast) ease,
+    box-shadow var(--vui-motion-fast) ease;
+}
+
+.field-group:focus-within {
+  background: var(--vui-color-input-bg-focus);
+  border-color: var(--vui-color-line-focus);
+  box-shadow: 0 0 0 3px var(--vui-color-accent-soft);
+}
+
+.field-group-addon {
+  align-items: center;
+  appearance: none;
+  background: var(--vui-color-surface);
+  border: 0;
+  border-right: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: 0;
+  color: var(--vui-color-text-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  justify-content: center;
+  min-width: var(--vui-control-height-compact);
+  padding: 0 var(--vui-space-2);
+  transition:
+    background-color var(--vui-motion-fast) ease,
+    color var(--vui-motion-fast) ease;
+}
+
+button.field-group-addon {
+  cursor: pointer;
+}
+
+button.field-group-addon:hover {
+  background: var(--vui-color-surface-hover);
+}
+
+.field-group-addon:focus-visible {
+  outline: var(--vui-focus-ring);
+  outline-offset: -3px;
+}
+
+.field-group > .field-group-control {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  outline: 0;
+}
+
+.field-group > .field-group-control:focus,
+.field-group > .field-group-control:focus-visible {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  outline: 0;
+}
+
+/* Popover/multiselect triggers get a visible disclosure cue without each app
+   redrawing its own chevron. Toggle aria-expanded to rotate it upward. */
+.field-disclosure {
+  cursor: pointer;
+  padding-right: 32px;
+  position: relative;
+}
+
+.field-disclosure::after {
+  border-bottom: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  content: "";
+  height: 6px;
+  opacity: 0.62;
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform var(--vui-motion-fast) var(--vui-ease-out);
+  width: 6px;
+}
+
+.field-disclosure[aria-expanded="true"]::after {
+  transform: translateY(-25%) rotate(225deg);
 }
 
 textarea {
@@ -692,16 +824,16 @@ textarea {
 /* Field validation (BEN-557): flag the control with aria-invalid="true"
    (or .field-invalid where aria doesn't fit) and follow it with a
    .field-error line inside the field row. */
-input[aria-invalid='true'],
-textarea[aria-invalid='true'],
-select[aria-invalid='true'],
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"],
 .field-invalid {
   border-color: var(--vui-color-danger);
 }
 
-input[aria-invalid='true']:focus,
-textarea[aria-invalid='true']:focus,
-select[aria-invalid='true']:focus,
+input[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
 .field-invalid:focus {
   border-color: var(--vui-color-danger);
   outline: none;
@@ -717,8 +849,8 @@ select[aria-invalid='true']:focus,
   text-transform: lowercase;
 }
 
-input[type='checkbox']:not(.switch-input),
-input[type='radio'] {
+input[type="checkbox"]:not(.switch-input),
+input[type="radio"] {
   appearance: none;
   width: 18px;
   height: 18px;
@@ -731,18 +863,18 @@ input[type='radio'] {
   vertical-align: middle;
 }
 
-input[type='radio'] {
+input[type="radio"] {
   border-radius: var(--vui-radius-pill);
 }
 
-input[type='checkbox']:not(.switch-input):checked,
-input[type='radio']:checked {
+input[type="checkbox"]:not(.switch-input):checked,
+input[type="radio"]:checked {
   background: var(--vui-color-accent);
   box-shadow: inset 0 0 0 3px var(--vui-color-surface-raised);
 }
 
-input[type='checkbox']:not(.switch-input):focus-visible,
-input[type='radio']:focus-visible,
+input[type="checkbox"]:not(.switch-input):focus-visible,
+input[type="radio"]:focus-visible,
 .switch-input:focus-visible + .switch-track {
   outline: var(--vui-focus-ring);
   outline-offset: var(--vui-focus-ring-offset);
@@ -774,7 +906,7 @@ input[type='radio']:focus-visible,
 }
 
 .switch-track::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 3px;
@@ -795,7 +927,7 @@ input[type='radio']:focus-visible,
   transform: translate(18px, -50%);
 }
 
-input[type='range'] {
+input[type="range"] {
   appearance: none;
   width: 160px;
   height: 18px;
@@ -804,19 +936,19 @@ input[type='range'] {
   cursor: pointer;
 }
 
-input[type='range']::-webkit-slider-runnable-track {
+input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--vui-radius-pill);
   background: var(--vui-color-line);
 }
 
-input[type='range']::-moz-range-track {
+input[type="range"]::-moz-range-track {
   height: 4px;
   border-radius: var(--vui-radius-pill);
   background: var(--vui-color-line);
 }
 
-input[type='range']::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
@@ -827,7 +959,7 @@ input[type='range']::-webkit-slider-thumb {
   box-shadow: var(--vui-shadow-hard-sm);
 }
 
-input[type='range']::-moz-range-thumb {
+input[type="range"]::-moz-range-thumb {
   width: 10px;
   height: 10px;
   border: var(--vui-border-width) solid var(--vui-color-line-strong);
@@ -836,7 +968,7 @@ input[type='range']::-moz-range-thumb {
   box-shadow: var(--vui-shadow-hard-sm);
 }
 
-input[type='range']:focus-visible {
+input[type="range"]:focus-visible {
   outline: var(--vui-focus-ring);
   outline-offset: var(--vui-focus-ring-offset);
 }
@@ -848,7 +980,7 @@ input[type='range']:focus-visible {
   color: var(--vui-color-text-muted);
   font-size: var(--vui-font-size-xs);
   letter-spacing: var(--vui-label-tracking);
-  text-transform: uppercase;
+  text-transform: var(--vui-label-transform);
 }
 
 .field-row > input,
@@ -880,7 +1012,7 @@ input[type='range']:focus-visible {
   height: 8px;
 }
 .vui-resize-divider::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   margin: auto;
@@ -949,6 +1081,46 @@ input[type='range']:focus-visible {
   display: flex;
 }
 
+/* Controlled modals animate the surface, not the layout around it. Individual
+   scale composes with the card's translate transform used by drag/resize. */
+.ui-modal[data-vui-state] {
+  opacity: 0;
+  transition:
+    opacity var(--vui-motion-exit) var(--vui-ease-out),
+    display var(--vui-motion-exit) allow-discrete;
+}
+
+.ui-modal[data-vui-state="open"] {
+  opacity: 1;
+  transition-duration: var(--vui-motion-overlay), var(--vui-motion-overlay);
+}
+
+.ui-modal[data-vui-state] .ui-modal-card {
+  opacity: 0;
+  scale: 0.97;
+  transform-origin: center;
+  transition:
+    opacity var(--vui-motion-exit) var(--vui-ease-out),
+    scale var(--vui-motion-exit) var(--vui-ease-out);
+}
+
+.ui-modal[data-vui-state="open"] .ui-modal-card {
+  opacity: 1;
+  scale: 1;
+  transition-duration: var(--vui-motion-overlay), var(--vui-motion-overlay);
+}
+
+@starting-style {
+  .ui-modal[data-vui-state="open"] {
+    opacity: 0;
+  }
+
+  .ui-modal[data-vui-state="open"] .ui-modal-card {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
 .ui-modal-backdrop {
   align-items: center;
   background: var(--vui-modal-backdrop);
@@ -975,7 +1147,7 @@ input[type='range']:focus-visible {
   will-change: transform, width, height;
 }
 
-.ui-modal-card[data-vui-modal-interactive='true'] .ui-modal-head {
+.ui-modal-card[data-vui-modal-interactive="true"] .ui-modal-head {
   cursor: move;
   touch-action: none;
 }
@@ -992,14 +1164,12 @@ input[type='range']:focus-visible {
   padding: var(--vui-modal-body-padding);
 }
 
-/* ONE modal head fleet-wide: the ink band. The BEN-605 two-role split
-   (parchment for centered, band for draggable) is retired — every panel
-   wears the band whether it drags or not, so the two looks can't drift. */
+/* One modal head fleet-wide so centered and draggable panels cannot drift. */
 .ui-modal-head {
   align-items: center;
-  background: var(--vui-color-text);
-  border-bottom: none;
-  color: var(--vui-color-text-inverse);
+  background: var(--vui-color-surface-raised);
+  border-bottom: var(--vui-border-width) solid var(--vui-color-line);
+  color: var(--vui-color-text-strong);
   display: flex;
   flex: 0 0 auto;
   gap: 12px;
@@ -1008,10 +1178,18 @@ input[type='range']:focus-visible {
   user-select: none;
 }
 
+/* Modal cards intentionally keep overflow visible for drag/resize handles, so
+   the header must carry the card's top curve instead of relying on clipping. */
+.ui-modal-card > .ui-modal-head,
+.ui-modal-card > .ui-modal-head-drag {
+  border-radius: calc(var(--vui-modal-card-radius) - var(--vui-border-width))
+    calc(var(--vui-modal-card-radius) - var(--vui-border-width)) 0 0;
+}
+
 .ui-modal-title {
-  font-family: var(--vui-font-body);
+  font-family: var(--vui-font-heading);
   font-size: var(--vui-font-size-md);
-  font-weight: 700;
+  font-weight: var(--vui-font-weight-title);
   letter-spacing: 0;
   line-height: 1.2;
   margin: 0;
@@ -1061,7 +1239,7 @@ input[type='range']:focus-visible {
    affordance, shared by modal cards and the feedback widget. */
 .vui-modal-resize-bottom-left::before,
 .feedback-capture-resize-bottom-left::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 2px;
   left: 2px;
@@ -1081,7 +1259,8 @@ input[type='range']:focus-visible {
 .vui-modal-resize-handle:hover::before,
 .ui-modal-card.is-vui-modal-resizing .vui-modal-resize-bottom-left::before,
 .feedback-capture-resize-handle:hover::before,
-.feedback-capture-widget.is-resizing .feedback-capture-resize-bottom-left::before {
+.feedback-capture-widget.is-resizing
+  .feedback-capture-resize-bottom-left::before {
   opacity: 0.8;
 }
 
@@ -1128,9 +1307,9 @@ input[type='range']:focus-visible {
 .ui-modal-head-drag,
 .feedback-capture-head {
   align-items: center;
-  background: var(--vui-color-text);
-  border-bottom: none;
-  color: var(--vui-color-text-inverse);
+  background: var(--vui-color-surface-raised);
+  border-bottom: var(--vui-border-width) solid var(--vui-color-line);
+  color: var(--vui-color-text-strong);
   cursor: move;
   display: flex;
   justify-content: space-between;
@@ -1138,48 +1317,270 @@ input[type='range']:focus-visible {
 }
 
 .feedback-capture-title {
-  font-family: var(--vui-font-body);
+  font-family: var(--vui-font-heading);
   font-size: var(--vui-font-size-md);
-  font-weight: 700;
+  font-weight: var(--vui-font-weight-title);
   letter-spacing: 0;
   line-height: 1.2;
   margin: 0;
 }
 
-/* On the ink band the quiet × sits in-flow and flips to on-dark colors. */
+/* In headed modals the quiet close control sits in flow. */
 .ui-modal-head .rune-close,
 .ui-modal-head-drag .rune-close,
 .feedback-capture-head .rune-close {
   position: static;
-  color: var(--vui-color-on-dark-text-soft);
+  color: var(--vui-color-text-muted);
 }
 
 .ui-modal-head .rune-close:hover,
 .ui-modal-head-drag .rune-close:hover,
 .feedback-capture-head .rune-close:hover {
-  color: var(--vui-color-text-inverse);
+  color: var(--vui-color-text-strong);
 }
 
 /* Card-corner markup (× as a direct card child) still lands on the band —
    same on-dark ink, keeps its absolute corner position. */
 .ui-modal-card > .rune-close {
-  color: var(--vui-color-on-dark-text-soft);
+  color: var(--vui-color-text-muted);
 }
 
 .ui-modal-card > .rune-close:hover {
-  color: var(--vui-color-text-inverse);
+  color: var(--vui-color-text-strong);
 }
 
 .ui-popover {
   position: absolute;
   z-index: var(--vui-z-flyout);
   min-width: 180px;
-  border: var(--vui-border-width) solid var(--vui-color-text-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-soft);
   background: var(--vui-color-surface-raised);
   color: var(--vui-color-text);
   box-shadow: var(--vui-shadow-popover);
   padding: var(--vui-space-2);
+}
+
+.ui-popover[data-vui-state] {
+  opacity: 0;
+  scale: 0.97;
+  transform-origin: var(--vui-popover-origin-x) var(--vui-popover-origin-y);
+  transition:
+    opacity var(--vui-motion-exit) var(--vui-ease-out),
+    scale var(--vui-motion-exit) var(--vui-ease-out),
+    display var(--vui-motion-exit) allow-discrete;
+}
+
+.ui-popover[data-vui-state="open"] {
+  opacity: 1;
+  scale: 1;
+  transition-duration:
+    var(--vui-motion-enter), var(--vui-motion-enter), var(--vui-motion-enter);
+}
+
+/* Drawers and sheets share one spatial model: the layer owns the scrim while
+   the panel enters from, and exits toward, its physical edge. */
+.ui-drawer-layer {
+  display: grid;
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: var(--vui-z-modal);
+}
+
+body.vui-drawer-open {
+  overflow: hidden;
+}
+
+.ui-drawer-backdrop {
+  appearance: none;
+  background: var(--vui-modal-backdrop);
+  border: 0;
+  cursor: default;
+  grid-area: 1 / 1;
+  inset: 0;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  position: fixed;
+  transition: opacity var(--vui-motion-exit) var(--vui-ease-out);
+}
+
+.ui-drawer {
+  background: var(--vui-color-surface);
+  box-shadow: var(--vui-shadow-float);
+  display: flex;
+  flex-direction: column;
+  grid-area: 1 / 1;
+  height: 100dvh;
+  max-width: min(92vw, 480px);
+  overflow: hidden;
+  pointer-events: auto;
+  position: relative;
+  transition: transform var(--vui-motion-exit) var(--vui-ease-drawer);
+  width: min(440px, 92vw);
+  will-change: transform;
+  z-index: 1;
+}
+
+.ui-drawer[data-vui-drawer-side="right"],
+.ui-drawer-layer[data-vui-drawer-side="right"] .ui-drawer {
+  border-left: var(--vui-border-width) solid var(--vui-color-line);
+  justify-self: end;
+  transform: translate3d(100%, 0, 0);
+}
+
+.ui-drawer[data-vui-drawer-side="left"],
+.ui-drawer-layer[data-vui-drawer-side="left"] .ui-drawer {
+  border-right: var(--vui-border-width) solid var(--vui-color-line);
+  justify-self: start;
+  transform: translate3d(-100%, 0, 0);
+}
+
+.ui-drawer[data-vui-drawer-side="bottom"],
+.ui-drawer-layer[data-vui-drawer-side="bottom"] .ui-drawer {
+  align-self: end;
+  border-radius: var(--vui-radius-soft) var(--vui-radius-soft) 0 0;
+  border-top: var(--vui-border-width) solid var(--vui-color-line);
+  height: min(78dvh, 680px);
+  max-width: none;
+  transform: translate3d(0, 100%, 0);
+  width: 100%;
+}
+
+.ui-drawer-layer[data-vui-state="open"] {
+  pointer-events: auto;
+}
+
+.ui-drawer-layer:not([data-vui-state="open"]) .ui-drawer,
+.ui-drawer-layer:not([data-vui-state="open"]) .ui-drawer-backdrop {
+  pointer-events: none;
+}
+
+.ui-drawer-layer[data-vui-state="open"] .ui-drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+  transition-duration: var(--vui-motion-drawer);
+}
+
+.ui-drawer-layer[data-vui-state="open"] .ui-drawer {
+  transform: translate3d(0, 0, 0);
+  transition-duration: var(--vui-motion-drawer);
+}
+
+.ui-drawer.is-vui-drawer-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.ui-drawer-head {
+  align-items: center;
+  background: var(--vui-color-surface-raised);
+  border-bottom: var(--vui-border-width) solid var(--vui-color-line);
+  color: var(--vui-color-text-strong);
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--vui-space-3);
+  justify-content: space-between;
+  padding: var(--vui-modal-head-padding);
+}
+
+.ui-drawer-title {
+  font-family: var(--vui-font-heading);
+  font-size: var(--vui-font-size-md);
+  font-weight: var(--vui-font-weight-title);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.ui-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--vui-modal-body-padding);
+}
+
+.ui-drawer-actions {
+  align-items: center;
+  border-top: var(--vui-border-width) solid var(--vui-color-line);
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--vui-modal-actions-gap);
+  justify-content: flex-end;
+  padding: var(--vui-modal-actions-padding);
+}
+
+.ui-drawer [data-vui-drawer-handle] {
+  touch-action: pan-y;
+}
+
+.ui-drawer[data-vui-drawer-side="bottom"] [data-vui-drawer-handle] {
+  touch-action: pan-x;
+}
+
+@starting-style {
+  .ui-drawer-layer[data-vui-state="open"] .ui-drawer-backdrop {
+    opacity: 0;
+  }
+
+  .ui-drawer-layer[data-vui-state="open"][data-vui-drawer-side="right"]
+    .ui-drawer {
+    transform: translate3d(100%, 0, 0);
+  }
+
+  .ui-drawer-layer[data-vui-state="open"][data-vui-drawer-side="left"]
+    .ui-drawer {
+    transform: translate3d(-100%, 0, 0);
+  }
+
+  .ui-drawer-layer[data-vui-state="open"][data-vui-drawer-side="bottom"]
+    .ui-drawer {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@starting-style {
+  .ui-popover[data-vui-state="open"] {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
+.ui-modal[data-vui-motion="none"],
+.ui-modal[data-vui-motion="none"] .ui-modal-card,
+.ui-popover[data-vui-motion="none"],
+.ui-drawer-layer[data-vui-motion="none"] .ui-drawer,
+.ui-drawer-layer[data-vui-motion="none"] .ui-drawer-backdrop {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-modal[data-vui-state],
+  .ui-popover[data-vui-state],
+  .ui-drawer-layer[data-vui-state] .ui-drawer-backdrop {
+    transition-duration: var(--vui-motion-fast);
+  }
+
+  .ui-modal[data-vui-state] .ui-modal-card,
+  .ui-popover[data-vui-state] {
+    scale: 1;
+  }
+
+  .ui-modal[data-vui-state] .ui-modal-card {
+    transition: opacity var(--vui-motion-fast) var(--vui-ease-out);
+  }
+
+  .ui-drawer-layer[data-vui-state] .ui-drawer {
+    opacity: 0;
+    transform: none;
+    transition: opacity var(--vui-motion-fast) var(--vui-ease-out);
+  }
+
+  .ui-drawer-layer[data-vui-state="open"] .ui-drawer {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* [hidden] handled globally in base.css. */
@@ -1205,7 +1606,7 @@ input[type='range']:focus-visible {
 
 .floating-menu-item:hover,
 .floating-menu-item.is-active,
-.floating-menu-item[aria-selected='true'] {
+.floating-menu-item[aria-selected="true"] {
   background: var(--vui-color-accent-soft);
 }
 
@@ -1244,7 +1645,7 @@ input[type='range']:focus-visible {
   flex-direction: column;
   gap: var(--vui-space-1);
   padding: var(--vui-space-1);
-  border: var(--vui-border-width) solid var(--vui-color-text-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
   background: var(--vui-color-surface-raised);
   box-shadow: var(--vui-shadow-popover);
@@ -1290,7 +1691,8 @@ input[type='range']:focus-visible {
   touch-action: none;
   z-index: var(--vui-z-feedback-canvas);
 }
-body.feedback-capture-open.feedback-capture-draw-mode .feedback-annotation-canvas {
+body.feedback-capture-open.feedback-capture-draw-mode
+  .feedback-annotation-canvas {
   cursor: crosshair;
   display: block;
   pointer-events: auto;
@@ -1354,7 +1756,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
   min-height: 0;
   overflow: auto;
   padding: 10px;
-  border-radius: 0 0 calc(var(--vui-modal-card-radius) - var(--vui-border-width))
+  border-radius: 0 0
+    calc(var(--vui-modal-card-radius) - var(--vui-border-width))
     calc(var(--vui-modal-card-radius) - var(--vui-border-width));
 }
 .feedback-annotation-tools {
@@ -1374,7 +1777,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   padding: 6px 8px;
 }
 .feedback-annotation-tool.active,
-.feedback-annotation-tool[aria-pressed='true'] {
+.feedback-annotation-tool[aria-pressed="true"] {
   background: var(--vui-color-text);
   border-color: var(--vui-color-text);
   color: var(--vui-color-text-inverse);
@@ -1466,11 +1869,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
   right: 0;
   width: 16px;
 }
-/* Floating action buttons — solid ink pills, upstreamed from biblioplex.
-   Apps stack several in a fixed .fab-cluster bottom-right; the feedback
-   widget mounts its own single-button cluster. Design pass (BEN-544): the
-   family joins the hard-shadow press language — soft ledger shadow at rest,
-   pressing flat on hover — and the shortcut chip picks up the tight radius. */
+/* Floating action buttons. Apps stack several in a fixed .fab-cluster at the
+   bottom-right; the feedback widget mounts its own single-button cluster. */
 .fab-cluster {
   position: fixed;
   right: var(--vui-edge-margin);
@@ -1486,22 +1886,46 @@ body.feedback-capture-capturing .feedback-capture-widget {
   align-items: center;
   gap: 8px;
   padding: 7px 12px;
-  background: var(--vui-color-text-strong);
-  color: var(--vui-color-text-inverse);
-  border: var(--vui-border-width) solid var(--vui-color-text-strong);
+  background: var(--vui-color-surface-raised);
+  color: var(--vui-color-text-strong);
+  border: var(--vui-border-width) solid var(--vui-color-line);
   border-radius: var(--vui-radius-sharp);
-  font-family: inherit;
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-sm);
+  font-weight: var(--vui-font-weight-body);
   cursor: pointer;
   box-shadow: var(--vui-shadow-soft);
-  text-transform: lowercase;
+  text-transform: none;
   text-decoration: none;
   letter-spacing: 0;
+  transition:
+    transform var(--vui-motion-fast) var(--vui-ease-out),
+    background-color var(--vui-motion-fast) ease,
+    border-color var(--vui-motion-fast) ease;
 }
-.fab-btn:hover {
-  background: var(--vui-color-btn-primary-hover);
-  box-shadow: var(--vui-shadow-subtle);
-  transform: translate(var(--vui-press-shift), var(--vui-press-shift));
+@media (hover: hover) and (pointer: fine) {
+  .fab-btn:hover {
+    background: var(--vui-color-surface-hover);
+    border-color: var(--vui-color-line-strong);
+    box-shadow: var(--vui-shadow-soft);
+    transform: none;
+  }
+}
+.fab-btn:active {
+  transform: scale(0.98);
+}
+.fab-btn-primary {
+  background: var(--vui-color-accent);
+  border-color: var(--vui-color-accent);
+  color: var(--vui-color-text-inverse);
+  font-weight: 600;
+}
+@media (hover: hover) and (pointer: fine) {
+  .fab-btn-primary:hover {
+    background: var(--vui-color-btn-primary-hover);
+    border-color: var(--vui-color-btn-primary-hover);
+    color: var(--vui-color-text-inverse);
+  }
 }
 /* Focus ring comes from the global :focus-visible rule. */
 .fab-glyph {
@@ -1531,17 +1955,17 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border-radius: var(--vui-radius-sharp);
   background: var(--ui-chip-bg, var(--vui-color-surface-sunken));
   color: var(--ui-chip-ink, var(--vui-color-text-strong));
-  box-shadow: 2px 2px 0 var(--vui-color-text-strong);
-  font-family: var(--vui-font-mono);
+  box-shadow: none;
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-xxs);
-  font-weight: var(--vui-font-weight-title);
+  font-weight: 500;
   line-height: 1.4;
   white-space: nowrap;
   vertical-align: middle;
 }
 
 .ui-chip-label {
-  text-transform: lowercase;
+  text-transform: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1683,11 +2107,13 @@ body.feedback-capture-capturing .feedback-capture-widget {
 /* [hidden] handled globally in base.css. */
 .banner {
   align-items: center;
-  background: var(--vui-color-surface-sunken);
-  border-bottom: var(--vui-border-width) solid var(--vui-color-text-strong);
+  background: var(--vui-color-surface-raised);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-soft);
+  box-shadow: var(--vui-shadow-popover);
   color: var(--vui-color-text-strong);
   display: flex;
-  font-family: var(--vui-font-mono);
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-sm);
   gap: var(--vui-space-3);
   padding: var(--vui-space-2) var(--vui-space-4);
@@ -1733,22 +2159,36 @@ body.feedback-capture-capturing .feedback-capture-widget {
   align-items: center;
   gap: var(--vui-space-3);
   max-width: min(420px, calc(100vw - 2 * var(--vui-edge-margin)));
-  border: var(--vui-border-width) solid var(--vui-color-line-strong);
-  border-radius: var(--vui-radius-sharp);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-soft);
   background: var(--vui-color-surface-raised);
   color: var(--vui-color-text);
-  box-shadow: var(--vui-shadow-firm);
-  font-family: var(--vui-font-mono);
+  box-shadow: var(--vui-shadow-popover);
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-sm);
   padding: var(--vui-space-2) var(--vui-space-3);
+  opacity: 1;
+  translate: 0 0;
   transition:
-    opacity var(--vui-motion-base),
-    transform var(--vui-motion-base);
+    opacity var(--vui-motion-enter) var(--vui-ease-out),
+    translate var(--vui-motion-enter) var(--vui-ease-out);
 }
 
 .toast.is-leaving {
   opacity: 0;
-  transform: translateY(4px);
+  translate: 0 4px;
+  transition-duration: var(--vui-motion-exit), var(--vui-motion-exit);
+}
+
+@starting-style {
+  .toast {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+.toast[data-vui-motion="none"] {
+  transition: none;
 }
 
 .toast-success {
@@ -1773,7 +2213,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
 
 @media (prefers-reduced-motion: reduce) {
   .toast {
-    transition: none;
+    translate: 0;
+    transition: opacity var(--vui-motion-fast) var(--vui-ease-out);
   }
 }
 
@@ -1833,20 +2274,22 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 .vui-table th {
-  font-family: var(--vui-font-mono);
+  background: var(--vui-color-surface);
+  box-shadow: inset 0 -1px 0 var(--vui-color-line);
+  font-family: var(--vui-font-body);
   font-size: var(--vui-font-size-xs);
-  font-weight: var(--vui-font-weight-title);
-  letter-spacing: var(--vui-label-tracking);
-  text-transform: lowercase;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   text-align: left;
   color: var(--vui-color-text-muted);
-  border-bottom: var(--vui-border-width) solid var(--vui-color-line-strong);
-  padding: var(--vui-space-2) var(--vui-space-3);
+  border-bottom: 0;
+  padding: 6px var(--vui-space-2);
 }
 
 .vui-table td {
   border-bottom: 1px solid var(--vui-color-line);
-  padding: var(--vui-space-2) var(--vui-space-3);
+  padding: var(--vui-space-2);
   vertical-align: middle;
 }
 
@@ -1944,7 +2387,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   color: var(--vui-color-text-strong);
 }
 
-.pager-btn[aria-current='page'] {
+.pager-btn[aria-current="page"] {
   background: var(--vui-color-text-strong);
   color: var(--vui-color-text-inverse);
 }
@@ -1981,28 +2424,40 @@ body.feedback-capture-capturing .feedback-capture-widget {
   width: var(--card-sleeve-width);
   aspect-ratio: 63 / 88;
   /* extra headroom at the top: the shell opening */
-  padding: calc(var(--card-sleeve-width) * 0.08) calc(var(--card-sleeve-width) * 0.055)
+  padding: calc(var(--card-sleeve-width) * 0.08)
+    calc(var(--card-sleeve-width) * 0.055)
     calc(var(--card-sleeve-width) * 0.055);
   border: 1px solid rgba(113, 99, 79, 0.38);
   border-radius: var(--vui-radius-tight);
   background:
-    linear-gradient(112deg, rgba(255, 255, 255, 0.42) 0 18%, rgba(255, 255, 255, 0.12) 19% 40%, transparent 41%),
+    linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0.42) 0 18%,
+      rgba(255, 255, 255, 0.12) 19% 40%,
+      transparent 41%
+    ),
     linear-gradient(180deg, rgba(222, 214, 198, 0.5), rgba(172, 158, 136, 0.4));
   /* the inset white ring is the hard shell's inner edge. Cards lie FLAT on
      the page — no drop shadow, ever (the ring/tape/sticker are drawn-on
      detail, not elevation). */
-  box-shadow: inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02)) rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 0 max(3px, calc(var(--card-sleeve-width) * 0.02))
+    rgba(255, 255, 255, 0.3);
 }
 
 .card-sleeve::before {
   /* penny-sleeve plastic: diagonal sheen + dust specks */
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 2;
   border-radius: inherit;
   background:
-    linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.26) 36%, transparent 44%),
+    linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.26) 36%,
+      transparent 44%
+    ),
     radial-gradient(
       circle at 18% 82%,
       rgba(66, 50, 38, 0.14) 0 calc(var(--card-sleeve-width) * 0.0125),
@@ -2018,7 +2473,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 
 .card-sleeve::after {
   /* tape sealing the shell opening */
-  content: '';
+  content: "";
   position: absolute;
   z-index: 3;
   top: calc(var(--card-sleeve-width) * 0.025);
@@ -2054,7 +2509,10 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border: var(--vui-border-width) dashed var(--vui-color-line);
   border-radius: var(--vui-radius-card);
   background: var(--vui-color-surface-placeholder);
-  background-image: radial-gradient(rgba(21, 16, 13, 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(
+    rgba(21, 16, 13, 0.08) 1px,
+    transparent 1px
+  );
   background-size: 6px 6px;
   color: var(--vui-color-text-muted);
   font-family: var(--vui-font-mono);
@@ -2067,11 +2525,12 @@ body.feedback-capture-capturing .feedback-capture-widget {
    licence at src/assets/fonts/Impact-Label-Licence.txt). Subsetting + web
    embedding are expressly permitted by that licence. */
 @font-face {
-  font-family: 'vui-price-label';
+  font-family: "vui-price-label";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('data:font/woff2;base64,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') format('woff2');
+  src: url("data:font/woff2;base64,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")
+    format("woff2");
 }
 
 /* Price sticker — a small die-cut pricing-gun label slapped on the sleeve.
@@ -2110,13 +2569,13 @@ body.feedback-capture-capturing .feedback-capture-widget {
   align-items: flex-end;
   justify-content: flex-start;
   /* inset of the print from the bottom-left corner of the fixed label */
-  padding: 0 calc(var(--card-sleeve-width) * 0.03) calc(var(--card-sleeve-width) * 0.03)
-    calc(var(--card-sleeve-width) * 0.004);
+  padding: 0 calc(var(--card-sleeve-width) * 0.03)
+    calc(var(--card-sleeve-width) * 0.03) calc(var(--card-sleeve-width) * 0.004);
   /* placement jitter (translate first, in card space); rotation sits at flat so
      the jitter swings it to either side — see --price-jitter-rot */
   transform: translate(var(--price-jitter-x), var(--price-jitter-y))
     rotate(var(--price-jitter-rot));
-  font-family: 'vui-price-label', Consolas, 'Courier New', monospace;
+  font-family: "vui-price-label", Consolas, "Courier New", monospace;
   font-size: calc(var(--card-sleeve-width) * 0.058);
   font-weight: 550;
   letter-spacing: 0.04em;
@@ -2129,15 +2588,23 @@ body.feedback-capture-capturing .feedback-capture-widget {
 /* the paper label behind the ink */
 .card-sleeve-price::before {
   --notch: calc(var(--card-sleeve-width) * 0.012);
-  content: '';
+  content: "";
   position: absolute;
   z-index: -1;
   inset: 0;
   background: #f8f6ee;
   border-radius: 0;
   -webkit-mask:
-    radial-gradient(circle var(--notch) at 50% 0%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px)),
-    radial-gradient(circle var(--notch) at 50% 100%, #0000 var(--notch), #000 calc(var(--notch) + 0.5px));
+    radial-gradient(
+      circle var(--notch) at 50% 0%,
+      #0000 var(--notch),
+      #000 calc(var(--notch) + 0.5px)
+    ),
+    radial-gradient(
+      circle var(--notch) at 50% 100%,
+      #0000 var(--notch),
+      #000 calc(var(--notch) + 0.5px)
+    );
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
   box-shadow:
@@ -2280,7 +2747,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
   user-select: none;
 }
 
-.breadcrumb [aria-current='page'] {
+.breadcrumb [aria-current="page"] {
   color: var(--vui-color-text-strong);
   font-weight: var(--vui-font-weight-title);
 }
@@ -2322,7 +2789,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 .accordion-item > summary::before {
-  content: '+';
+  content: "+";
   flex: none;
   width: 1em;
   text-align: center;
@@ -2330,7 +2797,7 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 .accordion-item[open] > summary::before {
-  content: '−';
+  content: "−";
 }
 
 .accordion-item > summary:hover {
@@ -2338,7 +2805,8 @@ body.feedback-capture-capturing .feedback-capture-widget {
 }
 
 .accordion-body {
-  padding: 0 var(--vui-space-3) var(--vui-space-3) calc(var(--vui-space-3) + 1em + var(--vui-space-2));
+  padding: 0 var(--vui-space-3) var(--vui-space-3)
+    calc(var(--vui-space-3) + 1em + var(--vui-space-2));
   font-size: var(--vui-font-size-sm);
   color: var(--vui-color-text);
 }
@@ -2758,6 +3226,68 @@ body.vui-design-system-page {
 }
 .ds-type-ramp-sample {
   white-space: nowrap;
+}
+
+/* Motion workbench: contract first, replay controls second. */
+.ds-motion-lab {
+  display: grid;
+  gap: var(--vui-space-4);
+}
+
+.ds-motion-toolbar {
+  align-items: center;
+  display: flex;
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xs);
+  gap: var(--vui-space-3);
+  justify-content: space-between;
+}
+
+.ds-motion-tiers {
+  display: grid;
+  gap: var(--vui-space-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ds-motion-tier {
+  background: var(--vui-color-surface-raised);
+  border: 1px solid var(--vui-color-line);
+  display: grid;
+  gap: var(--vui-space-1);
+  padding: var(--vui-space-3);
+}
+
+.ds-motion-tier strong,
+.ds-motion-tier code {
+  font-family: var(--vui-font-mono);
+  font-size: var(--vui-font-size-xs);
+}
+
+.ds-motion-tier span {
+  color: var(--vui-color-text-muted);
+  font-size: var(--vui-font-size-xs);
+  line-height: 1.35;
+}
+
+.ds-motion-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vui-space-2);
+}
+
+.ds-motion-menu-wrap {
+  position: relative;
+}
+
+.ds-motion-modal {
+  width: min(420px, calc(100vw - 32px));
+}
+
+@media (max-width: 680px) {
+  .ds-motion-tiers {
+    grid-template-columns: 1fr;
+  }
 }
 
 

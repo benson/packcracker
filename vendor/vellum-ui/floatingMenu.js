@@ -1,5 +1,6 @@
 import { outsideClick } from './outsideClick.js';
 import { isMovingTowardSubmenu } from './safeTriangle.js';
+import { applyMotionMode, applyMotionState, setPopoverTransformOrigin } from './motion.js';
 
 const ROW_CONTEXT_MENU_EDGE_BUFFER_PX = 8;
 const DEFAULT_GAP_PX = 4;
@@ -220,9 +221,11 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
         ? options.hoverIntent
         : null;
 
-  const close = ({ restoreFocus = true } = {}) => {
+  const close = ({ restoreFocus = true, reason = 'manual', event = null, motion = 'auto' } = {}) => {
     if (!open) return;
     open = false;
+    applyMotionMode(menuEl, { motion, reason, event });
+    applyMotionState(menuEl, false);
     menuEl.hidden = true;
     menuEl.setAttribute('aria-hidden', 'true');
     if (typeof cleanupOutside === 'function') cleanupOutside();
@@ -237,7 +240,7 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     cleanupScroll = null;
     cleanupResize = null;
     cleanupHoverIntent = null;
-    options.onClose?.();
+    options.onClose?.({ reason, event });
     if (restoreFocus && doc?.activeElement && menuEl.contains(doc.activeElement)) {
       triggerEl.focus?.();
     }
@@ -247,7 +250,7 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     const keyTarget = event.target?.closest?.('[role="menuitem"]');
     if (event.key === 'Escape') {
       event.preventDefault();
-      close();
+      close({ reason: 'escape', event });
       return;
     }
     if (!keyTarget || !menuEl.contains(keyTarget)) return;
@@ -270,13 +273,16 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     }
   };
 
-  const openMenu = ({ focusFirst = false } = {}) => {
+  const openMenu = ({ focusFirst = false, reason = 'manual', event = null, motion = 'auto' } = {}) => {
     if (open) return;
     open = true;
+    applyMotionMode(menuEl, { motion, reason, event });
+    applyMotionState(menuEl, true);
     menuEl.hidden = false;
     menuEl.setAttribute('aria-hidden', 'false');
     positionMenu(triggerEl, menuEl, options);
-    options.onOpen?.();
+    setPopoverTransformOrigin(triggerEl, menuEl);
+    options.onOpen?.({ reason, event });
     if (focusFirst && options.keyboard !== false) {
       menuItems(menuEl)[0]?.focus?.();
     }
@@ -290,7 +296,7 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
         menuEl,
         (event) => {
           if (event?.target && triggerEl.contains?.(event.target)) return;
-          close({ restoreFocus: false });
+          close({ restoreFocus: false, reason: 'outside', event });
         },
         { event: 'pointerdown' },
       );
@@ -298,7 +304,7 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
         const target = event?.target;
         if (!target) return;
         if (menuEl.contains(target) || triggerEl.contains?.(target) || target === triggerEl) return;
-        close({ restoreFocus: false });
+        close({ restoreFocus: false, reason: 'outside', event });
       };
       doc.addEventListener('click', clickHandler, true);
       cleanupOutsideClick = () => doc.removeEventListener('click', clickHandler, true);
@@ -312,12 +318,12 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
       cleanupEscape = () => menuEl.removeEventListener('keydown', onKeydown);
     }
     if (closeOn.has('scroll')) {
-      const handler = () => close({ restoreFocus: false });
+      const handler = (event) => close({ restoreFocus: false, reason: 'scroll', event });
       doc.defaultView?.addEventListener?.('scroll', handler, true);
       cleanupScroll = () => doc.defaultView?.removeEventListener?.('scroll', handler, true);
     }
     if (closeOn.has('resize')) {
-      const handler = () => close({ restoreFocus: false });
+      const handler = (event) => close({ restoreFocus: false, reason: 'resize', event });
       doc.defaultView?.addEventListener?.('resize', handler);
       cleanupResize = () => doc.defaultView?.removeEventListener?.('resize', handler);
     }
@@ -327,7 +333,7 @@ export function floatingMenu(triggerEl, menuEl, options = {}) {
     open: openMenu,
     close,
     isOpen: () => open,
-    destroy: () => close({ restoreFocus: false }),
+    destroy: () => close({ restoreFocus: false, reason: 'destroy', motion: 'none' }),
   };
 }
 

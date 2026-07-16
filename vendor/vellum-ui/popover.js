@@ -3,6 +3,7 @@
 // dropdown consume it. Known exception: the quick-jump palette (quickJump.js) is
 // keyboard-launched (Ctrl+K, no trigger element) and stays hand-rolled.
 import { outsideClick } from './outsideClick.js';
+import { applyMotionMode, applyMotionState, setPopoverTransformOrigin } from './motion.js';
 
 function normalizedCloseOn(closeOn) {
   if (!Array.isArray(closeOn)) return new Set(['outside', 'escape']);
@@ -55,6 +56,7 @@ export function popover(triggerEl, panelEl, options = {}) {
   };
 
   const applyOpenState = (open) => {
+    applyMotionState(panelEl, open);
     if (hiddenAttr) panelEl.hidden = !open;
     if (openClass) panelEl.classList.toggle(openClass, open);
     panelEl.setAttribute('aria-hidden', open ? 'false' : 'true');
@@ -88,24 +90,27 @@ export function popover(triggerEl, panelEl, options = {}) {
     cleanupOutside = null;
   };
 
-  const open = ({ reason = 'manual', event = null } = {}) => {
+  const open = ({ reason = 'manual', event = null, motion = 'auto' } = {}) => {
     if (destroyed || isOpen()) return;
+    applyMotionMode(panelEl, { motion, reason, event });
     applyOpenState(true);
+    setPopoverTransformOrigin(triggerEl, panelEl);
     installOutsideClose();
     options.onOpen?.({ reason, event });
   };
 
-  const close = ({ reason = 'manual', event = null, restoreFocus = false } = {}) => {
+  const close = ({ reason = 'manual', event = null, restoreFocus = false, motion = 'auto' } = {}) => {
     if (destroyed || !isOpen()) return;
+    applyMotionMode(panelEl, { motion, reason, event });
     applyOpenState(false);
     removeOutsideClose();
     options.onClose?.({ reason, event });
     if (restoreFocus) triggerEl.focus?.();
   };
 
-  const toggle = ({ reason = 'toggle', event = null } = {}) => {
-    if (isOpen()) close({ reason, event });
-    else open({ reason, event });
+  const toggle = ({ reason = 'toggle', event = null, motion = 'auto' } = {}) => {
+    if (isOpen()) close({ reason, event, motion });
+    else open({ reason, event, motion });
   };
 
   const onTriggerClick = (event) => {
