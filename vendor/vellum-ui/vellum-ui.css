@@ -11,6 +11,8 @@
   --vui-z-feedback-canvas: 125;
   --vui-z-feedback: 130;
   --vui-control-height-compact: 32px;
+  --vui-touch-target: 44px;
+  --vui-mobile-nav-height: 64px;
   --vui-control-pad-y: 6px;
   --vui-control-pad-x: 10px;
   --vui-focus-ring: 2px solid var(--vui-color-accent);
@@ -1940,6 +1942,173 @@ body.feedback-capture-capturing .feedback-capture-widget {
   white-space: nowrap;
 }
 /* .fab-shortcut shares the .btn-shortcut rule in primitives.css (BEN-622). */
+
+/* Mobile application chrome. These classes are intentionally layout-ready
+   rather than breakpoint-bound: consumers decide when their desktop shell
+   becomes mobile, while Vellum owns the material, target size, and states. */
+.mobile-toolbar {
+  align-items: center;
+  background: color-mix(in srgb, var(--vui-color-bg) 94%, transparent);
+  border-bottom: var(--vui-border-width) solid var(--vui-color-line);
+  display: flex;
+  gap: var(--vui-space-2);
+  justify-content: space-between;
+  min-height: var(--vui-touch-target);
+  padding: var(--vui-space-2) var(--vui-space-3);
+  position: sticky;
+  top: 0;
+  z-index: var(--vui-z-flyout);
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .mobile-toolbar {
+    backdrop-filter: blur(12px) saturate(130%);
+  }
+}
+
+.mobile-toolbar-title {
+  color: var(--vui-color-text-strong);
+  font-family: var(--vui-font-heading);
+  font-size: var(--vui-font-size-lg);
+  font-weight: var(--vui-font-weight-body);
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+
+.mobile-bottom-nav {
+  align-items: stretch;
+  background: color-mix(in srgb, var(--vui-color-bg) 96%, transparent);
+  border-top: var(--vui-border-width) solid var(--vui-color-line);
+  bottom: 0;
+  box-shadow: 0 -8px 24px rgba(45, 34, 27, 0.06);
+  display: grid;
+  gap: var(--vui-space-1);
+  left: 0;
+  min-height: calc(var(--vui-mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  right: 0;
+  z-index: var(--vui-z-fab);
+}
+
+@supports (backdrop-filter: blur(16px)) {
+  .mobile-bottom-nav {
+    backdrop-filter: blur(16px) saturate(140%);
+  }
+}
+
+.mobile-bottom-nav-item {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: var(--vui-radius-soft);
+  color: var(--vui-color-text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  font-size: var(--vui-font-size-xs);
+  font-weight: var(--vui-font-weight-body);
+  gap: 3px;
+  justify-content: center;
+  line-height: 1;
+  min-height: var(--vui-touch-target);
+  min-width: var(--vui-touch-target);
+  padding: 5px 6px;
+  text-decoration: none;
+  text-transform: lowercase;
+  transition:
+    background-color var(--vui-motion-fast) ease,
+    color var(--vui-motion-fast) ease,
+    transform var(--vui-motion-snap) var(--vui-ease-out);
+}
+
+.mobile-bottom-nav-item:active {
+  transform: scale(0.97);
+}
+
+.mobile-bottom-nav-item:is(.active, [aria-current="page"], [aria-pressed="true"]) {
+  background: var(--vui-color-accent-soft);
+  color: var(--vui-color-accent);
+  font-weight: var(--vui-font-weight-title);
+}
+
+.mobile-bottom-nav-icon {
+  align-items: center;
+  display: inline-flex;
+  height: 18px;
+  justify-content: center;
+  width: 18px;
+}
+
+.mobile-utility-menu {
+  position: relative;
+}
+
+.mobile-utility-menu > summary {
+  list-style: none;
+}
+
+.mobile-utility-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-utility-menu-panel {
+  background: var(--vui-color-surface-raised);
+  border: var(--vui-border-width) solid var(--vui-color-line);
+  border-radius: var(--vui-radius-soft);
+  bottom: calc(100% + var(--vui-space-2));
+  box-shadow: var(--vui-shadow-popover);
+  display: grid;
+  gap: 2px;
+  min-width: 180px;
+  padding: var(--vui-space-2);
+  position: absolute;
+  right: 0;
+  transform-origin: bottom right;
+}
+
+.mobile-utility-menu:not([open]) .mobile-utility-menu-panel {
+  display: none;
+}
+
+.mobile-utility-menu-item {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: var(--vui-radius-tight);
+  color: var(--vui-color-text-strong);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: var(--vui-font-size-sm);
+  gap: var(--vui-space-2);
+  justify-content: flex-start;
+  min-height: var(--vui-touch-target);
+  padding: var(--vui-space-2) var(--vui-space-3);
+  text-align: left;
+  text-decoration: none;
+  text-transform: none;
+  width: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mobile-bottom-nav-item:hover,
+  .mobile-utility-menu-item:hover {
+    background: var(--vui-color-surface-hover);
+    color: var(--vui-color-text-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .mobile-toolbar,
+  .mobile-bottom-nav {
+    backdrop-filter: none;
+    background: var(--vui-color-bg);
+  }
+}
 
 
 /* components.css */
