@@ -36,7 +36,7 @@ See `~/.claude/magic-nuances.md` for full MTG/Scryfall details.
 - Added PNG fallback (`favicon.png`) for better compatibility
 
 ### Terminal/environment
-- Local dev: `python3 -m http.server 3000`
+- Local dev: `npx serve . -l 3000` (on the Mac, `python3 -m http.server` 404s under Claude Code's sandbox)
 - In-memory cardCache resets on page reload (hard refresh to clear)
 
 ## Style
