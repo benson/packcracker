@@ -52,6 +52,9 @@ export function drawer(layerEl, options = {}) {
     applyMotionState(layerEl, open);
     layerEl.classList?.toggle(options.openClass || 'open', open);
     layerEl.setAttribute?.('aria-hidden', open ? 'false' : 'true');
+    // The closing animation keeps the layer mounted briefly. `inert` prevents
+    // its controls from remaining keyboard-focusable while aria-hidden is true.
+    layerEl.inert = !open;
     panelEl.setAttribute?.('aria-hidden', open ? 'false' : 'true');
     if (bodyClass) doc?.body?.classList?.toggle(bodyClass, open);
   }
