@@ -1240,35 +1240,6 @@ input[type="range"]:focus-visible {
   width: var(--vui-modal-resize-corner-size);
 }
 
-/* Corner grip — three hairline diagonals. The ONE bottom-left resize
-   affordance, shared by modal cards and the feedback widget. */
-.vui-modal-resize-bottom-left::before,
-.feedback-capture-resize-bottom-left::before {
-  content: "";
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--vui-color-line-strong) 0 1px,
-    transparent 1px 5px
-  );
-  clip-path: polygon(0 0, 0 100%, 100% 100%);
-  opacity: 0.55;
-  pointer-events: none;
-  transition: opacity var(--vui-motion-fast) ease;
-}
-
-.vui-modal-resize-handle:hover::before,
-.ui-modal-card.is-vui-modal-resizing .vui-modal-resize-bottom-left::before,
-.feedback-capture-resize-handle:hover::before,
-.feedback-capture-widget.is-resizing
-  .feedback-capture-resize-bottom-left::before {
-  opacity: 0.8;
-}
-
 /* The one dismiss affordance (BEN-604): a quiet grey × — transparent, no
    border, no shadow. The class name predates the redesign and stays so
    consumer markup doesn't churn. */
