@@ -93,6 +93,12 @@
   --vui-color-overlay-strong: rgba(0, 0, 0, 0.8);
   --vui-color-overlay-soft: rgba(0, 0, 0, 0.4);
   --vui-modal-backdrop: var(--vui-color-overlay-soft);
+  /* Darker scrim for focused content such as a card detail modal over a grid. */
+  --vui-overlay-detail: rgba(0, 0, 0, 0.64);
+  /* Scrollbar rails: thumbs follow text tokens so they flip with the theme. */
+  --vui-scrollbar-thumb: var(--vui-color-text-muted);
+  --vui-scrollbar-thumb-hover: var(--vui-color-text-strong);
+  --vui-scrollbar-track: transparent;
   --vui-modal-card-bg: var(--vui-color-surface-raised);
   --vui-modal-card-border: 1px solid var(--vui-color-line);
   --vui-modal-card-radius: 12px;
