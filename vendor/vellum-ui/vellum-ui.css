@@ -174,6 +174,9 @@
   --vui-motion-fast: 120ms;
   --vui-motion-base: 180ms;
   --vui-motion-slow: 240ms;
+  /* Busy indicator rotation period, independent of UI transition timing.
+     Reduced motion keeps it moving at a minimum of 1600ms per rotation. */
+  --vui-spin-duration: 800ms;
   /* Semantic motion: quick feedback stays on snap; transient surfaces enter
      with a little more time than they take to leave. Consumers can slow the
      whole surface system in a motion lab without changing interaction snap. */
@@ -2244,12 +2247,19 @@ body.feedback-capture-capturing .feedback-capture-widget {
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: var(--vui-radius-pill);
-  animation: vui-spin var(--vui-motion-slow) linear infinite;
+  animation: vui-spin var(--vui-spin-duration) linear infinite;
 }
 
 @keyframes vui-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    /* Preserve the busy signal and respect slower consumer overrides. */
+    animation-duration: max(1600ms, var(--vui-spin-duration));
   }
 }
 
