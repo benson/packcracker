@@ -153,7 +153,7 @@ function shell() {
         'div',
         { className: 'modal-lab-preview-grid' },
         preview('PoolBuilder confirm', poolBuilderModal()),
-        preview('Biblioplex editor', biblioplexModal()),
+        preview('Tomebound editor', tomeboundModal()),
         preview('Long content', longModal()),
         preview('Destructive action', dangerModal()),
       ),
@@ -448,7 +448,7 @@ function poolBuilderModal() {
   );
 }
 
-function biblioplexModal() {
+function tomeboundModal() {
   return modalCard(
     'edit printing',
     htmlFragment(
