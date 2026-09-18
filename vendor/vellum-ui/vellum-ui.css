@@ -1249,6 +1249,60 @@ input[type="range"]:focus-visible {
   width: var(--vui-modal-resize-corner-size);
 }
 
+.vui-modal-resize-right {
+  bottom: 0;
+  cursor: ew-resize;
+  right: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+  top: 0;
+  width: var(--vui-modal-resize-edge-size);
+}
+
+.vui-modal-resize-top {
+  cursor: ns-resize;
+  height: var(--vui-modal-resize-edge-size);
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+}
+
+/* Keep the legacy bottom-left hit area; otherwise cover the full bottom. */
+.ui-modal-card:not(:has(> .vui-modal-resize-bottom-left)) > .vui-modal-resize-bottom {
+  left: 0;
+}
+
+.vui-modal-resize-bottom-right,
+.vui-modal-resize-top-left,
+.vui-modal-resize-top-right {
+  height: var(--vui-modal-resize-corner-size);
+  width: var(--vui-modal-resize-corner-size);
+}
+
+.vui-modal-resize-bottom-right {
+  bottom: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+  cursor: nwse-resize;
+  right: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+}
+
+.vui-modal-resize-top-left {
+  cursor: nwse-resize;
+  left: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+  top: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+}
+
+.vui-modal-resize-top-right {
+  cursor: nesw-resize;
+  right: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+  top: calc(-1 * var(--vui-modal-resize-edge-size) / 2);
+}
+
+/* Corners win hit testing even when consumers list the edge handles last. */
+.vui-modal-resize-bottom-left,
+.vui-modal-resize-bottom-right,
+.vui-modal-resize-top-left,
+.vui-modal-resize-top-right {
+  z-index: 5;
+}
+
 /* The one dismiss affordance (BEN-604): a quiet grey × — transparent, no
    border, no shadow. The class name predates the redesign and stays so
    consumer markup doesn't churn. */

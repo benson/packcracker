@@ -1,6 +1,6 @@
 import { applyMotionMode, applyMotionState } from './motion.js';
 
-const RESIZE_EDGES = ['bottom', 'left', 'bottom-left'];
+const RESIZE_EDGES = ['right', 'bottom', 'bottom-right'];
 const MODAL_STACK_BASE = 100;
 const MODAL_STACK_KEY = '__vuiModalStackIndex';
 const DRAG_HANDLE_SELECTOR = '.ui-modal-head';
@@ -327,9 +327,33 @@ export function calculateModalResizeLayout({ edge, layout, delta, viewport, cons
     width = nextWidth;
   }
 
+  if (edge.includes('right')) {
+    const margin = finite(constraints.margin, 12);
+    const minWidth = finite(constraints.minWidth, 220);
+    const left = constraints.centeredX === false
+      ? finite(layout.originLeft, margin - x) + x
+      : (viewport.width - width) / 2 + x;
+    const maxWidth = Math.max(minWidth, Math.min(constraints.maxWidth ?? viewport.width, viewport.width - margin - left));
+    const nextWidth = clampSize(width + finite(delta.x, 0), minWidth, maxWidth);
+    x += (nextWidth - width) * bottomResizeOffsetRatio(constraints.centeredX);
+    width = nextWidth;
+  }
+
   if (edge.includes('bottom')) {
     const nextHeight = clampSize(height + finite(delta.y, 0), constraints.minHeight, constraints.maxHeight ?? viewport.height);
     y += (nextHeight - height) * bottomResizeOffsetRatio(constraints.centeredY);
+    height = nextHeight;
+  }
+
+  if (edge.includes('top')) {
+    const margin = finite(constraints.margin, 12);
+    const minHeight = finite(constraints.minHeight, 140);
+    const bottom = constraints.centeredY === false
+      ? finite(layout.originTop, viewport.height - margin - y - height) + y + height
+      : (viewport.height + height) / 2 + y;
+    const maxHeight = Math.max(minHeight, Math.min(constraints.maxHeight ?? viewport.height, bottom - margin));
+    const nextHeight = clampSize(height - finite(delta.y, 0), minHeight, maxHeight);
+    y += (height - nextHeight) * leftResizeOffsetRatio(constraints.centeredY);
     height = nextHeight;
   }
 
@@ -408,10 +432,14 @@ function ensureResizeHandle(card, edge) {
   const existing = [...card.querySelectorAll('[data-vui-modal-resize-handle]')].find(
     (node) => node.parentElement === card && node.dataset.vuiModalResizeHandle === edge,
   );
-  if (existing) return existing;
+  if (existing) {
+    existing.dataset.vuiModalResizeEdge = edge;
+    return existing;
+  }
   const handle = card.ownerDocument.createElement('div');
   handle.className = `vui-modal-resize-handle vui-modal-resize-${edge}`;
   handle.dataset.vuiModalResizeHandle = edge;
+  handle.dataset.vuiModalResizeEdge = edge;
   handle.dataset.vuiModalGenerated = 'true';
   handle.setAttribute('aria-hidden', 'true');
   card.append(handle);
