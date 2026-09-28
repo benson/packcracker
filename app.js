@@ -11,17 +11,9 @@ import {
   calculateBoosterExpectedValues,
 } from 'https://bensonperry.com/shared/mtg.js';
 import { combobox } from './vendor/vellum-ui/combobox.js';
-import { mountFeedbackCapture } from './vendor/vellum-ui/feedbackCapture.js';
 import { initTheme, themeToggle } from './vendor/vellum-ui/themeToggle.js';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
-
-// Feedback: files to the packcracker Linear project via the biblioplex worker.
-// Shows for everyone; the worker gates submissions on the site origin.
-mountFeedbackCapture({
-  project: 'packcracker',
-  apiUrl: 'https://biblioplex-api.bensonperry.com',
-});
 
 // ============ URL State Management ============
 

@@ -3,13 +3,11 @@
   /* Vellum canonical tokens */
   --vui-edge-margin: 12px;
   /* The z ladder, lowest to highest: flyout 50 < modal 110 < fab 120 <
-     feedback canvas 125 < feedback widget 130 < toast 160. New overlays
+     toast 160. New overlays
      pick a rung here, never a raw number. */
   --vui-z-flyout: 50;
   --vui-z-modal: 110;
   --vui-z-fab: 120;
-  --vui-z-feedback-canvas: 125;
-  --vui-z-feedback: 130;
   --vui-control-height-compact: 32px;
   --vui-touch-target: 44px;
   --vui-mobile-nav-height: 64px;
@@ -1341,10 +1339,8 @@ input[type="range"]:focus-visible {
 }
 
 /* .ui-modal-head-drag is a compat alias from the retired two-head era — the
-   band IS the head now. .feedback-capture-head wears it natively; both are
-   actually draggable, so they keep the move cursor unconditionally. */
-.ui-modal-head-drag,
-.feedback-capture-head {
+   band is the draggable head, so it keeps the move cursor unconditionally. */
+.ui-modal-head-drag {
   align-items: center;
   background: var(--vui-color-surface-raised);
   border-bottom: var(--vui-border-width) solid var(--vui-color-line);
@@ -1355,26 +1351,15 @@ input[type="range"]:focus-visible {
   user-select: none;
 }
 
-.feedback-capture-title {
-  font-family: var(--vui-font-heading);
-  font-size: var(--vui-font-size-md);
-  font-weight: var(--vui-font-weight-title);
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin: 0;
-}
-
 /* In headed modals the quiet close control sits in flow. */
 .ui-modal-head .rune-close,
-.ui-modal-head-drag .rune-close,
-.feedback-capture-head .rune-close {
+.ui-modal-head-drag .rune-close {
   position: static;
   color: var(--vui-color-text-muted);
 }
 
 .ui-modal-head .rune-close:hover,
-.ui-modal-head-drag .rune-close:hover,
-.feedback-capture-head .rune-close:hover {
+.ui-modal-head-drag .rune-close:hover {
   color: var(--vui-color-text-strong);
 }
 
@@ -1721,195 +1706,8 @@ body.vui-drawer-open {
   font-size: var(--vui-font-size-xs);
 }
 
-/* Feedback capture — shared file-it-to-Linear widget (see js/feedbackCapture.js).
-   Upstreamed from biblioplex; .rune-close styling comes from the modal family. */
-.feedback-annotation-canvas {
-  inset: 0;
-  pointer-events: none;
-  position: fixed;
-  touch-action: none;
-  z-index: var(--vui-z-feedback-canvas);
-}
-body.feedback-capture-open.feedback-capture-draw-mode
-  .feedback-annotation-canvas {
-  cursor: crosshair;
-  display: block;
-  pointer-events: auto;
-}
-.feedback-capture-widget {
-  --feedback-capture-width: 360px;
-  --feedback-capture-height: 360px;
-  /* left/top are set at runtime when the widget is dragged (.is-positioned). */
-  --feedback-capture-left: 12px;
-  --feedback-capture-top: 12px;
-  /* frame tokens shared with .ui-modal-card so the widget reads as the same
-     modal family (BEN-551/620) */
-  background: var(--vui-color-surface);
-  border: var(--vui-modal-card-border);
-  border-radius: var(--vui-modal-card-radius);
-  bottom: 148px;
-  box-shadow: var(--vui-modal-card-shadow);
-  display: flex;
-  flex-direction: column;
-  height: min(var(--feedback-capture-height), calc(100dvh - 24px));
-  max-height: calc(100dvh - 24px);
-  max-width: calc(100vw - 24px);
-  min-height: min(280px, calc(100dvh - 24px));
-  min-width: min(320px, calc(100vw - 24px));
-  /* the rounded clip lives on the inner head (top) and body (bottom). */
-  overflow: visible;
-  position: fixed;
-  right: 16px;
-  width: min(var(--feedback-capture-width), calc(100vw - 24px));
-  z-index: var(--vui-z-feedback);
-}
-.feedback-capture-widget.is-positioned {
-  bottom: auto;
-  left: var(--feedback-capture-left);
-  right: auto;
-  top: var(--feedback-capture-top);
-}
-.feedback-capture-widget.is-dragging,
-.feedback-capture-widget.is-resizing {
-  user-select: none;
-}
-/* [hidden] handled globally in base.css. */
-body.feedback-capture-capturing .feedback-capture-widget {
-  display: none;
-}
-/* Band colors/cursor come from the shared drag-band rules above; the inner
-   clip radius follows the modal-card frame. */
-.feedback-capture-head {
-  border-radius: calc(var(--vui-modal-card-radius) - var(--vui-border-width))
-    calc(var(--vui-modal-card-radius) - var(--vui-border-width)) 0 0;
-  gap: 12px;
-  min-height: 40px;
-  padding: var(--vui-modal-head-padding);
-  touch-action: none;
-}
-.feedback-capture-body {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  overflow: auto;
-  padding: 10px;
-  border-radius: 0 0
-    calc(var(--vui-modal-card-radius) - var(--vui-border-width))
-    calc(var(--vui-modal-card-radius) - var(--vui-border-width));
-}
-.feedback-annotation-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.feedback-annotation-tool {
-  background: var(--vui-color-surface);
-  border: var(--vui-border-width) solid var(--vui-color-line-strong);
-  border-radius: var(--vui-radius-sharp);
-  color: var(--vui-color-text);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--vui-font-size-xs);
-  line-height: 1;
-  padding: 6px 8px;
-}
-.feedback-annotation-tool.active,
-.feedback-annotation-tool[aria-pressed="true"] {
-  background: var(--vui-color-text);
-  border-color: var(--vui-color-text);
-  color: var(--vui-color-text-inverse);
-}
-.feedback-capture-label {
-  color: var(--vui-color-text-muted);
-  font-size: var(--vui-font-size-xs);
-}
-.feedback-capture-note {
-  background: var(--vui-color-surface);
-  border: var(--vui-border-width) solid var(--vui-color-line-strong);
-  border-radius: var(--vui-radius-sharp);
-  box-sizing: border-box;
-  color: var(--vui-color-text-strong);
-  flex: 1 1 96px;
-  font: inherit;
-  line-height: 1.35;
-  min-height: 88px;
-  padding: 8px;
-  resize: none;
-  width: 100%;
-}
-.feedback-capture-details {
-  border: var(--vui-border-width) solid var(--vui-color-line);
-  flex: 0 0 auto;
-  padding: 8px;
-}
-.feedback-capture-details summary {
-  cursor: pointer;
-}
-.feedback-capture-details pre {
-  font-family: var(--vui-font-mono);
-  font-size: var(--vui-font-size-xs);
-  line-height: 1.35;
-  margin: 8px 0 0;
-  white-space: pre-wrap;
-}
-.feedback-capture-status {
-  color: var(--vui-color-text-muted);
-  min-height: 1em;
-}
-.feedback-capture-status a {
-  color: var(--vui-color-text-strong);
-}
-.feedback-capture-actions {
-  border-top: var(--vui-border-width) solid var(--vui-color-line);
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  padding: 10px;
-}
-.feedback-capture-resize-handle {
-  position: absolute;
-  touch-action: none;
-  z-index: 3;
-}
-.feedback-capture-resize-left {
-  bottom: 12px;
-  cursor: ew-resize;
-  left: 0;
-  top: 40px;
-  width: 8px;
-}
-.feedback-capture-resize-right {
-  bottom: 12px;
-  cursor: ew-resize;
-  right: 0;
-  top: 40px;
-  width: 8px;
-}
-.feedback-capture-resize-bottom {
-  bottom: 0;
-  cursor: ns-resize;
-  height: 8px;
-  left: 12px;
-  right: 12px;
-}
-.feedback-capture-resize-bottom-left {
-  bottom: 0;
-  cursor: nesw-resize;
-  height: 16px;
-  left: 0;
-  width: 16px;
-}
-.feedback-capture-resize-bottom-right {
-  bottom: 0;
-  cursor: nwse-resize;
-  height: 16px;
-  right: 0;
-  width: 16px;
-}
 /* Floating action buttons. Apps stack several in a fixed .fab-cluster at the
-   bottom-right; the feedback widget mounts its own single-button cluster. */
+   bottom-right. */
 .fab-cluster {
   position: fixed;
   right: var(--vui-edge-margin);
