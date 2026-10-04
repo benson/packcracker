@@ -1,15 +1,16 @@
 {
-  "updated": "2026-10-02T15:53:40.587Z",
+  "updated": "2026-10-04T14:52:23.644Z",
   "source": "mtgjson+scryfall",
   "mode": "incremental",
-  "selected": 3,
-  "sets": 3,
+  "selected": 4,
+  "sets": 4,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
   "staleHours": 20,
   "maxTargets": 25,
   "refreshed": [
+    "fra",
     "slz",
     "hob",
     "msh"
