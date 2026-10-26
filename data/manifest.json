@@ -1,9 +1,9 @@
 {
-  "updated": "2026-10-25T13:46:58.265Z",
+  "updated": "2026-10-26T16:12:24.531Z",
   "source": "mtgjson+scryfall",
   "mode": "incremental",
-  "selected": 4,
-  "sets": 4,
+  "selected": 5,
+  "sets": 5,
   "errors": 0,
   "activeReleaseDays": 120,
   "upcomingDays": 90,
@@ -13,7 +13,8 @@
     "mbc",
     "fra",
     "slz",
-    "hob"
+    "hob",
+    "bchr"
   ],
   "failed": []
 }
